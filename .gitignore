@@ -1,0 +1,5 @@
+.DS_Store
+build*
+jest_0
+node_modules
+config.js

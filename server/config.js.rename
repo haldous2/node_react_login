@@ -1,0 +1,30 @@
+
+/*
+ Config options - store passwords and connection info here
+
+ Note:   mail_port: secure:true (TSL) for port 465, secure:false for port 587
+
+ Note: rename this file to config.js
+*/
+
+module.exports = {
+
+    db_host: '',
+    db_data: '',
+    db_user: '',
+    db_pass: '',
+
+    jwtSecret: '',
+
+    fb_app_id: '',
+    fb_app_secret: '',
+
+    mail_type: '',
+    mail_host: '',
+    mail_port: '',
+    mail_auth_user: '',
+    mail_auth_pass: '',
+
+    mail_aws_ses_key_id: '',
+    mail_aws_ses_key_secret: ''
+}
