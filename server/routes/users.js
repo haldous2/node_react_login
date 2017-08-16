@@ -247,7 +247,7 @@ function sendForgot(user){
     // setup email data with unicode symbols
     let mailOptions = {
         from: 'messages@n2local.com',
-        to: 'haldous2@gmail.com',
+        to: user.attributes.email,
         subject: 'Your password',
         text: 'Your password is ' + new_password,
         html: 'Your password is <b>' + new_password + '</b>'
