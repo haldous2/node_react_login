@@ -14,8 +14,9 @@ export default function(Component){
             };
         }
         // Lifecycle hook - right before this mounts
-        componentWillMount(){
-            if (!this.props.isAuthenticated){
+        componentDidMount(){
+            console.log('utilities.requireAuth.isAuthenticated:', this.props.isAuthenticated);
+            if (this.props.isAuthenticated === false){
                 this.props.addFlashMessage({
                     type: 'error',
                     text: 'You need to log in'
@@ -25,11 +26,12 @@ export default function(Component){
         }
         // Lifecycle hook - right after this mounts
         componentWillUpdate(nextProps){
-            if (!nextProps.isAuthenticated){
+            if (nextProps.isAuthenticated === false){
                 this.setState({ redirect: true });
             }
         }
         render(){
+            console.log('utilities.requireAuth.render.isAuthenticated:', this.props.isAuthenticated);
             if (this.state.redirect) {
                 return (
                     <Redirect to='/login' />
@@ -41,10 +43,11 @@ export default function(Component){
         }
     }
     Authenticate.propTypes = {
-        isAuthenticated: PropTypes.bool.isRequired,
+        isAuthenticated: PropTypes.bool,
         addFlashMessage: PropTypes.func.isRequired
     }
     function mapStateToProps(state){
+        console.log(state);
         return {
             isAuthenticated: state.authUser.isAuthenticated
         }

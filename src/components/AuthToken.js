@@ -1,46 +1,74 @@
 
 import React from 'react';
+import { Redirect } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { authToken } from '../actions/authActions';
+import cookie from 'react-cookies';
+import { authLogin, authLogout, authToken } from '../actions/authActions';
+import { addFlashMessage } from '../actions/flashMessages';
 
 class AuthToken extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {};
-        this.loadToken();
+        this.state = {
+            redirect_home: false
+        };
     }
-    verifyToken(token){
-        return this.props.authToken(token)
-        .then(
-            res => {
-                return res;
-            }
-        );
-    }
-    loadToken(){
+    onLoad(){
         /*
          If token passed via querystring (from facebook, google etc..)
          verify token and then log user in
         */
-        var token = localStorage.getItem('jwtToken');
-        if (token){
-            this.verifyToken(token)
-            .then(
-                res => {
-                    console.log('loadToken.res:', res);
+        const search = this.props.location.search;
+        const params = new URLSearchParams(search);
+        const token = params.get('token');
+        authToken(token)
+        .then(
+            res => {
+                if (res === true){
+                    this.props.authLogin(token);
+                    this.props.addFlashMessage({
+                        type: 'success',
+                        text: 'You have successfully logged in! Welcome!'
+                    });
+                    this.setState({ redirect_home: true });
+                }else{
+                    /*
+                     Load from cookie.jwt or localStorage
+                    */
+                    // let token = localStorage.getItem('jwtToken');
+                    const token = cookie.load('jwt');
+                    authToken(token)
+                    .then(
+                        res => {
+                            //console.log('src.components.AuthToken.res:', res);
+                            if (res === true){
+                                this.props.authLogin(token);
+                            }else{
+                                this.props.authLogout();
+                            }
+                        }
+                    );
                 }
-            );
-        }
+            }
+        );
+    }
+    componentWillMount(){
+        this.onLoad();
     }
     render(){
-        return (
-            <span></span>
-        );
+        const { redirect_home } = this.state;
+        if (redirect_home) {
+            return (
+                <Redirect to='/' />
+            )
+        }
+        return ( null );
     }
 }
 AuthToken.propTypes = {
-    authToken: PropTypes.func.isRequired
+    authLogin: PropTypes.func.isRequired,
+    authLogout: PropTypes.func.isRequired,
+    addFlashMessage: PropTypes.func.isRequired
 }
-
-export default connect(null, { authToken })(AuthToken);
+export default connect(null, { authLogin, authLogout, addFlashMessage })(AuthToken);

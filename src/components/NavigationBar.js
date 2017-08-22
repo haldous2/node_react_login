@@ -23,17 +23,24 @@ class NavigationBar extends React.Component {
 
         const { isAuthenticated } = this.props.authUser;
 
-        const link_auth = (
-            <ul className="nav navbar-nav navbar-right">
-                <li><Link to="#" onClick={this.logout}>Logout</Link></li>
-            </ul>
-        );
-        const link_guest = (
-            <ul className="nav navbar-nav navbar-right">
-                <li><Link to="/signup">Sign Up</Link></li>
-                <li><Link to="/login">Log In</Link></li>
-            </ul>
-        );
+        let link_nav = null;
+        if (isAuthenticated === true){
+            link_nav = (
+                <ul className="nav navbar-nav navbar-right">
+                    <li><Link to="/mysite">My Site (Test Login)</Link></li>
+                    <li><Link to="#" onClick={this.logout}>Logout</Link></li>
+                </ul>
+            );
+        }
+        if (isAuthenticated === false){
+            link_nav = (
+                <ul className="nav navbar-nav navbar-right">
+                    <li><Link to="/mysite">My Site (Test Login)</Link></li>
+                    <li><Link to="/signup">Sign Up</Link></li>
+                    <li><Link to="/login">Log In</Link></li>
+                </ul>
+            );
+        }
 
         return (
             <nav className="navbar navbar-default">
@@ -42,7 +49,7 @@ class NavigationBar extends React.Component {
                         <Link to="/" className="navbar-brand">The Loginator!</Link>
                     </div>
                     <div className="collapse navbar-collapse">
-                        { isAuthenticated ? link_auth : link_guest }
+                        { link_nav }
                     </div>
                 </div>
             </nav>
@@ -53,7 +60,6 @@ NavigationBar.propTypes = {
     authUser: PropTypes.object.isRequired,
     authLogout: PropTypes.func.isRequired
 }
-
 function mapStateToProps(state){
     return {
         authUser: state.authUser

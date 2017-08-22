@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import { validateInput, validateEmail } from '../validations/auth';
 import InputField from '../components/shared/InputField';
 
-import { authLogin, authToken, forgotPassword } from '../actions/authActions';
+import { authLogin, authCredentials, forgotPassword } from '../actions/authActions';
 import { addFlashMessage } from '../actions/flashMessages';
 
 class LoginForm extends React.Component {
@@ -26,16 +26,13 @@ class LoginForm extends React.Component {
                 form: ''
             },
             redirect_home: false,
-            redirect_login_facebook: false,
             isLoading: false
         }
         /* either bind onChange here or for onClick in input element -- in constructor preferred */
         this.onChange = this.onChange.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
-        this.verifyToken = this.verifyToken.bind(this);
-        this.loginFacebook = this.loginFacebook.bind(this);
+        this.onLoginFacebook = this.onLoginFacebook.bind(this);
         this.onForgotPassword = this.onForgotPassword.bind(this);
-        this.loadToken();
     }
     isEmpty(obj){
         return Object.keys(obj).length === 0 && obj.constructor === Object
@@ -66,24 +63,27 @@ class LoginForm extends React.Component {
             (isValid) => {
                 if (isValid){
                     this.setState({ errors: {}, isLoading: true });
-                    this.props.authLogin(this.state).then(
-                        (res) => {
-                            this.props.addFlashMessage({
-                                type: 'success',
-                                text: 'You have successfully logged in! Welcome!'
-                            });
-                            this.setState({ isLoading: false, redirect_home: true });
-                        },
-                        (err) => {
-                            // Any HTTP response not 200 will go to err
-                            this.setState({ isLoading: false, errors: err.response.data });
+                    authCredentials(this.state)
+                    .then(
+                        res => {
+                            if (res.success){
+                                this.props.authLogin(res.success.token);
+                                this.props.addFlashMessage({
+                                    type: 'success',
+                                    text: 'You have successfully logged in! Welcome!'
+                                });
+                                this.setState({ isLoading: false, redirect_home: true });
+                            }
+                            if (res.error){
+                                this.setState({ isLoading: false, errors: res.error });
+                            }
                         }
                     );
                 }
             }
         );
     }
-    loginFacebook(e){
+    onLoginFacebook(e){
         e.preventDefault();
         // Redirect doesn't load node api - is it viewing history ?
         //this.setState({ redirect_login_facebook: true });
@@ -101,7 +101,7 @@ class LoginForm extends React.Component {
             isValid => {
                 if (isValid){
 
-                    this.props.forgotPassword(this.state.email)
+                    forgotPassword(this.state.email)
                     .then(
                         res => {
                             if (res.success){
@@ -120,49 +120,13 @@ class LoginForm extends React.Component {
             }
         );
     }
-    verifyToken(token){
-        return this.props.authToken(token)
-        .then(
-            res => {
-                return res;
-            }
-        );
-    }
-    loadToken(){
-        /*
-         If token passed via querystring (from facebook, google etc..)
-         verify token and then log user in
-        */
-        const search = this.props.location.search;
-        const params = new URLSearchParams(search);
-        const token = params.get('token');
-        if (token){
-            this.verifyToken(token)
-            .then(
-                res => {
-                    if (res === true){
-                        this.props.addFlashMessage({
-                            type: 'success',
-                            text: 'You have successfully logged in! Welcome!'
-                        });
-                        this.setState({ redirect_home: true });
-                    }
-                }
-            );
-        }
-    }
     render(){
 
-        const { errors, success, redirect_home, redirect_login_facebook } = this.state;
+        const { errors, success, redirect_home } = this.state;
 
         if (redirect_home) {
             return (
                 <Redirect to='/' />
-            )
-        }
-        if (redirect_login_facebook) {
-            return (
-                <Redirect push to='/api/users/facebook' />
             )
         }
         return (
@@ -207,7 +171,7 @@ class LoginForm extends React.Component {
                     </div>
 
                     <div className="form-group">
-                        <button disabled={this.state.isLoading} onClick={this.loginFacebook} className="btn btn-outline-primary btn-block btn-lg">
+                        <button disabled={this.state.isLoading} onClick={this.onLoginFacebook} className="btn btn-outline-primary btn-block btn-lg">
                             Log in with Facebook
                         </button>
                     </div>
@@ -219,9 +183,6 @@ class LoginForm extends React.Component {
 }
 LoginForm.propTypes = {
     authLogin: PropTypes.func.isRequired,
-    authToken: PropTypes.func.isRequired,
-    forgotPassword: PropTypes.func.isRequired,
     addFlashMessage: PropTypes.func.isRequired
 }
-
-export default connect(null, { authLogin, authToken, forgotPassword, addFlashMessage } )(LoginForm);
+export default connect(null, { authLogin, addFlashMessage } )(LoginForm);

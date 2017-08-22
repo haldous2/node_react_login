@@ -179,12 +179,33 @@ router.post('/token', function(req, res) {
     if (token){
         jwt.verify(token, config.jwtSecret, (err, decoded) => {
             if (err){
+                // Token did not validate - expired, didn't verify against secret or just invalid
+                //console.log('server.routes.users: token is not valid');
                 res.status(401).json({ error: 'Failed to authenticate'});
             }else{
-                res.status(200).json({ successs: 'Token is valid' });
+                User.query({
+                    where: { id: decoded.id }
+                }).fetch().then(user => {
+                    if (user){
+                        const { status } = user.attributes;
+                        if (status == "Active"){
+                            //console.log('server.routes.users: Token is good!');
+                            res.status(200).json({ successs: 'Token is valid' });
+                        }else{
+                            // User is not active
+                            //console.log('server.routes.users: user is not active');
+                            res.status(401).json({ error: 'Failed to authenticate' });
+                        }
+                    }else{
+                        // No user found at that id
+                        //console.log('server.routes.users: user not found');
+                        res.status(401).json({ error: 'Failed to authenticate' });
+                    }
+                });
             }
         });
     }else{
+        //console.log('server.routes.users: token not provided')
         res.status(403).json({ error: 'No token provided' });
     }
 });
@@ -256,8 +277,8 @@ function sendForgot(user){
     // send mail with defined transport object
     if (transporter){
         transporter.sendMail(mailOptions, (error, info) => {
-            //if (error) { console.log('sendMail error:', error); }
-            //console.log('Message %s sent: %s', info.messageId, info.response);
+            if (error) { console.log('sendMail error:', error); }
+            console.log('Message %s sent: %s', info.messageId, info.response);
         });
     }
 }
