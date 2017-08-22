@@ -93,7 +93,7 @@ You can find the most recent version of this guide [here](https://github.com/fac
 
 View a live demo @
 
-* http://node-one.n2local.com <a href='test'>Test</a>
+* http://node-one.n2local.com
 * Note: no https yet so progressive web app isn't loading
 
 ## Updating to New Releases
