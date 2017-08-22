@@ -38,7 +38,7 @@ class App extends React.Component {
             <Provider store={store}>
                 <BrowserRouter>
                     <div>
-                        <Route path="/login" component={AuthToken} />
+                        <Route component={AuthToken} />
                         <NavigationBar />
                         <FlashMessagesList />
                         <Switch>

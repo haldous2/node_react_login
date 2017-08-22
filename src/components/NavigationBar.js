@@ -15,7 +15,6 @@ class NavigationBar extends React.Component {
 
     logout(e){
         e.preventDefault();
-        console.log('logging out');
         this.props.authLogout();
     }
 

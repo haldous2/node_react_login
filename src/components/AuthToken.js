@@ -41,7 +41,6 @@ class AuthToken extends React.Component {
                     authToken(token)
                     .then(
                         res => {
-                            //console.log('src.components.AuthToken.res:', res);
                             if (res === true){
                                 this.props.authLogin(token);
                             }else{
