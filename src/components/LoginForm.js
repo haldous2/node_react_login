@@ -78,6 +78,9 @@ class LoginForm extends React.Component {
                                 this.setState({ isLoading: false, errors: res.error });
                             }
                         }
+                    )
+                    .catch(
+                        err => {}
                     );
                 }
             }
@@ -115,6 +118,9 @@ class LoginForm extends React.Component {
                                 this.setState({ errors: errors, success: success });
                             }
                         }
+                    )
+                    .catch(
+                        err => {}
                     );
                 }
             }

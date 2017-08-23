@@ -45,7 +45,7 @@ class NavigationBar extends React.Component {
             <nav className="navbar navbar-default">
                 <div className="container-fluid">
                     <div className="navbar-header">
-                        <Link to="/" className="navbar-brand">The Loginator!</Link>
+                        <Link to="/" className="navbar-brand">The Website</Link>
                     </div>
                     <div className="collapse navbar-collapse">
                         { link_nav }

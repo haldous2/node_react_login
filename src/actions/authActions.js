@@ -5,21 +5,6 @@ import { SET_CURRENT_USER } from './types';
 import jwt_decode from 'jwt-decode';
 import cookie from 'react-cookies';
 
-function setCookie(key, val){
-    try{
-        cookie.save(key, val, {path: "/"});
-    }catch(err){
-        console.log('cookie error:', err);
-    }
-}
-function removeCookie(key){
-    try{
-        cookie.remove(key, {path: "/"});
-    }catch(err){
-        console.log('cookie error:', err);
-    }
-}
-
 export function setCurrentUser(user){
     return {
         type: SET_CURRENT_USER,
@@ -29,7 +14,7 @@ export function setCurrentUser(user){
 export function authLogin(token){
     return dispatch => {
         //localStorage.setItem('jwtToken', token);
-        setCookie('jwt', token);
+        cookie.save('jwt', token, {path: "/"});
         setAuthToken(token);
         dispatch(setCurrentUser(jwt_decode(token)));
     }
@@ -37,7 +22,7 @@ export function authLogin(token){
 export function authLogout(){
     return dispatch => {
         //localStorage.removeItem('jwtToken');
-        removeCookie('jwt');
+        cookie.remove('jwt', {path: "/"});
         setAuthToken(false);
         dispatch(setCurrentUser({}));
     }
@@ -61,7 +46,7 @@ export function authCredentials(userData){
         );
     }else{
         return new Promise((valid, invalid) => {
-            return valid({ error: 'Missing user data' });
+            return invalid('User data is required');
         });
     }
 }
@@ -75,17 +60,15 @@ export function authToken(token){
         return axios.post('/api/users/token', { token: token })
         .then(
             res => {
-                //console.log('src.actions.authActions: token is good!');
                 return true;
             },
             err => {
-                //console.log('src.actions.authActions: token is invalid');
                 return false;
             }
         );
     }else{
         return new Promise((valid, invalid) => {
-            return valid(false);
+            return invalid('Token is required');
         });
     }
 }
@@ -99,14 +82,16 @@ export function forgotPassword(email){
         .then(
             res => {
                 return { success: res.data.message };
+                //return { success: res.data };
             },
             err => {
                 return { error: err.response.data.message };
+                //return { error: err.response.data };
             }
         );
     }else{
         return new Promise((valid, invalid) => {
-            return valid({ error: 'Email is required' });
+            return invalid('Email is required');
         });
     }
 }

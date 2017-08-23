@@ -212,33 +212,46 @@ router.post('/token', function(req, res) {
 
 /*
  Authorize user a.k.a. login via Passport
+ Note: validator crashes if email not sent (not a string error)
+       therefore loading each variable succintly in order to avoid the error
  ////////////////////////////////////////////////////////////////////////////////////////////////////
 */
 router.post('/login', function(req, res) {
-    const { email, password } = req.body;
-    User.query({
-        where: { email: email }
-    }).fetch().then(user => {
-        if (user){
-            // Verify password
-            if (bcrypt.compareSync(password, user.get('password_digest'))){
-                let payload = {
-                    id: user.get('id'),
-                    fb_id: '',
-                    email: user.get('email'),
-                    fb_access_token: '',
-                    fb_refresh_token: ''
+    let email = '';
+    if (req.body.email){
+        email = req.body.email;
+    }
+    let password = '';
+    if (req.body.password){
+        password = req.body.password;
+    }
+    const { errors, isValid } = validateEmail({ email: email });
+    if (isValid){
+        User.query({
+            where: { email: email }
+        }).fetch().then(user => {
+            if (user){
+                // Verify password
+                if (bcrypt.compareSync(password, user.get('password_digest'))){
+                    let payload = {
+                        id: user.get('id'),
+                        fb_id: '',
+                        email: user.get('email'),
+                        fb_access_token: '',
+                        fb_refresh_token: ''
+                    }
+                    let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
+                    res.status(200).json({ token });
+                }else{
+                    res.status(401).json({ form: 'Invalid credentials' });
                 }
-                let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
-                res.status(200).json({ token });
             }else{
                 res.status(401).json({ form: 'Invalid credentials' });
             }
-        }else{
-            // HTTP 401 - Unauthorized
-            res.status(401).json({ form: 'Invalid credentials' });
-        }
-    });
+        });
+    }else{
+        res.status(401).json( errors );
+    }
 });
 
 /*
@@ -304,7 +317,7 @@ router.post('/forgot', function(req, res) {
         });
     }else{
         // HTTP 400 - Bad Request
-        res.status(400).json({ message: 'Not an email address' });
+        res.status(400).json({ message: 'Email is not valid' });
     }
 });
 
