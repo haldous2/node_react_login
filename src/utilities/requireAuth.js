@@ -15,7 +15,6 @@ export default function(Component){
         }
         // Lifecycle hook - right before this mounts
         componentDidMount(){
-            console.log('utilities.requireAuth.isAuthenticated:', this.props.isAuthenticated);
             if (this.props.isAuthenticated === false){
                 this.props.addFlashMessage({
                     type: 'error',
@@ -31,7 +30,6 @@ export default function(Component){
             }
         }
         render(){
-            console.log('utilities.requireAuth.render.isAuthenticated:', this.props.isAuthenticated);
             if (this.state.redirect) {
                 return (
                     <Redirect to='/login' />
@@ -47,7 +45,6 @@ export default function(Component){
         addFlashMessage: PropTypes.func.isRequired
     }
     function mapStateToProps(state){
-        console.log(state);
         return {
             isAuthenticated: state.authUser.isAuthenticated
         }

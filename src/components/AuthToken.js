@@ -36,12 +36,17 @@ class AuthToken extends React.Component {
             }
         )
         .catch(
-            err => {}
+            err => {
+                /*
+                 No token passed in querystring - let's try read a cookie
+                */
+                this.onLoadLocal();
+            }
         );
     }
     onLoadLocal(){
         /*
-         Load from cookie.jwt or localStorage
+         Load from cookie.jwt or localStorage - depending on how you store
         */
         // let token = localStorage.getItem('jwtToken');
         const token = cookie.load('jwt');
@@ -57,51 +62,16 @@ class AuthToken extends React.Component {
         )
         .catch(
             err => {
+                /*
+                 Need to authLogout in order to set isAuthenticated to false for
+                 navigationBar and other stuff reading the store
+                */
                 this.props.authLogout();
             }
         );
     }
-    onLoadArchive(){
-        /*
-         If token passed via querystring (from facebook, google etc..)
-         verify token and then log user in
-        */
-        // const search = this.props.location.search;
-        // const params = new URLSearchParams(search);
-        // const token = params.get('token');
-        // authToken(token)
-        // .then(
-        //     res => {
-        //         if (res === true){
-        //             this.props.authLogin(token);
-        //             this.props.addFlashMessage({
-        //                 type: 'success',
-        //                 text: 'You have successfully logged in! Welcome!'
-        //             });
-        //             this.setState({ redirect_home: true });
-        //         }else{
-        //             /*
-        //              Load from cookie.jwt or localStorage
-        //             */
-        //             // let token = localStorage.getItem('jwtToken');
-        //             const token = cookie.load('jwt');
-        //             authToken(token)
-        //             .then(
-        //                 res => {
-        //                     if (res === true){
-        //                         this.props.authLogin(token);
-        //                     }else{
-        //                         this.props.authLogout();
-        //                     }
-        //                 }
-        //             );
-        //         }
-        //     }
-        // );
-    }
     componentWillMount(){
         this.onLoadToken();
-        this.onLoadLocal();
     }
     render(){
         const { redirect_home, redirect_login } = this.state;

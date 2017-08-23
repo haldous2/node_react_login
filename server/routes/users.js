@@ -148,7 +148,8 @@ router.get('/', function(req, res){
 
 router.get('/email/:identifier', function(req, res) {
 
-    const identifier = req.params.identifier;
+    let identifier = '';
+    identifier = req.params.identifier;
     const { errors, isValid } = validateEmail({ email: identifier });
 
     if (isValid){
@@ -296,7 +297,10 @@ function sendForgot(user){
     }
 }
 router.post('/forgot', function(req, res) {
-    const { email } = req.body;
+    let email = '';
+    if (req.body.email){
+        email = req.body.email;
+    }
     const { errors, isValid } = validateEmail({ email: email });
     if (isValid){
         User.query({
