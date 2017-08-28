@@ -101,6 +101,7 @@ View a live demo @
 
 **Development
 
+```
 server {
 
 	## Note: this is for Dev only - run as /build in production!!
@@ -131,10 +132,12 @@ server {
 		proxy_cache_bypass $http_upgrade;
 	}
 }
+```
 
 **Production
 You'll need to run 'npm run build' to run this live
 
+```
 server {
 
 	server_name www.yourdomain.com;
@@ -152,6 +155,7 @@ server {
 		proxy_cache_bypass $http_upgrade;
 	}
 }
+```
 
 ## Updating to New Releases
 
