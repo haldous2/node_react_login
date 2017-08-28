@@ -6,6 +6,7 @@ You can find the most recent version of this guide [here](https://github.com/fac
 ## Table of Contents
 
 - [Live Demo](#live-demo)
+- [NGinX Dev and Production Virtual Config](#nginx-configs)
 - [Updating to New Releases](#updating-to-new-releases)
 - [Sending Feedback](#sending-feedback)
 - [Folder Structure](#folder-structure)
@@ -95,6 +96,62 @@ View a live demo @
 
 * http://node-one.n2local.com
 * Note: no https yet so progressive web app isn't loading
+
+## Nginx Configs
+
+**Development
+
+server {
+
+	## Note: this is for Dev only - run as /build in production!!
+
+	server_name www.yourdomain.com;
+	listen 80;
+
+	try_files $uri @proxy;
+
+	location @proxy {
+		proxy_pass http://192.168.1.1:3000;
+		## To avoid webpack checkHost() error 'Invalid Host header',
+		## Set host to listening host of dev server
+		proxy_set_header Host 192.168.1.1;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+		proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+	}
+
+	location /api {
+		proxy_pass http://192.168.1.1:3001;
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection 'upgrade';
+		proxy_set_header Host $host;
+		proxy_cache_bypass $http_upgrade;
+	}
+}
+
+**Production
+You'll need to run 'npm run build' to run this live
+
+server {
+
+	server_name www.yourdomain.com;
+	listen 80;
+	root /usr/share/nginx/www/react-project-dir/build/;
+
+	try_files $uri /index.html;
+
+	location /api {
+		proxy_pass http://192.168.1.1:3001;
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection 'upgrade';
+		proxy_set_header Host $host;
+		proxy_cache_bypass $http_upgrade;
+	}
+}
 
 ## Updating to New Releases
 
