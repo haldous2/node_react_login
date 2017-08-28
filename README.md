@@ -6,7 +6,7 @@ You can find the most recent version of this guide [here](https://github.com/fac
 ## Table of Contents
 
 - [Live Demo](#live-demo)
-- [NGinX Dev and Production Virtual Config](#nginx-configs)
+- [Nginx Dev and Production Virtual Config](#nginx-configs)
 - [Updating to New Releases](#updating-to-new-releases)
 - [Sending Feedback](#sending-feedback)
 - [Folder Structure](#folder-structure)
