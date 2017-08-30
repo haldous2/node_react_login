@@ -34,9 +34,9 @@ app.use(function(req, res, next) {
 
 //now we can set the route path & initialize the API
 app.use('/api/users', users);
-app.use('/', function(req, res) {
-    res.json({ message: 'API Initialized!'});
-});
+// app.use('/', function(req, res) {
+//     res.json({ message: 'API Initialized!'});
+// });
 
 // Define the port.
 const port = 3001;

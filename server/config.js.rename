@@ -2,9 +2,32 @@
 /*
  Config options - store passwords and connection info here
 
- Note:   mail_port: secure:true (TSL) for port 465, secure:false for port 587
+Note: npm install nodemailer
 
- Note: rename this file to config.js
+Note: mail_type: smtp, smtp_auth, aws_ses
+
+Note: aws-sdk
+      You'll need to setup an IAM user with a policy to sendRawEmail
+      An smtp IAM user won't work for the sdk
+      Also note that if you're getting signature expired errors from aws you might
+      need to sync your server time via 'ntpdate ntp.ubuntu.com'
+      IAM Custom Policy:
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "XXXXXXXXXXXXXXXXX",
+                "Effect": "Allow",
+                "Action": [
+                    "ses:SendEmail",
+                    "ses:SendRawEmail" <-- really only need this one
+                ],
+                "Resource": [
+                    "*"
+                ]
+            }
+        ]
+    }
 */
 
 module.exports = {
@@ -20,11 +43,13 @@ module.exports = {
     fb_app_secret: '',
 
     mail_type: '',
-    mail_host: '',
-    mail_port: '',
-    mail_auth_user: '',
-    mail_auth_pass: '',
 
-    mail_aws_ses_key_id: '',
-    mail_aws_ses_key_secret: ''
+    smtp_host: '',
+    smtp_port: '25',
+    smtp_auth_user: '',
+    smtp_auth_pass: '',
+
+    aws_ses_region: '',
+    aws_iam_id: '',
+    aws_iam_key: ''
 }

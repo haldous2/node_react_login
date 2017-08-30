@@ -32,66 +32,26 @@ export function authLogout(){
  LoginForm credential checker
 */
 export function authCredentials(userData){
-    if (userData){
-        return axios.post('/api/users/login', userData)
-        .then(
-            res => {
-                //console.log('src.actions.authCredentials: credentials are good!');
-                return { success: res.data };
-            },
-            err => {
-                //console.log('src.actions.authCredentials: credentials are invalid');
-                return { error: err.response.data}
-            }
-        );
-    }else{
-        return new Promise((valid, invalid) => {
-            return invalid('User data is required');
-        });
-    }
+    return axios.post('/api/users/login/', userData);
 }
 
 /*
- Verify JWT
- going to verify via jsonwebtoken (node only) + config keys
+ JSON Web Tokens (JWT) - verification
 */
 export function authToken(token){
-    if (token){
-        return axios.post('/api/users/token', { token: token })
-        .then(
-            res => {
-                return true;
-            },
-            err => {
-                return false;
-            }
-        );
-    }else{
-        return new Promise((valid, invalid) => {
-            return invalid('Token is required');
-        });
-    }
+    return axios.post('/api/users/token', { token: token });
 }
 
 /*
- Forgot Password
+ LoginForm - forgot password
 */
 export function forgotPassword(email){
-    if (email){
-        return axios.post('/api/users/forgot', { email: email })
-        .then(
-            res => {
-                return { success: res.data.message };
-                //return { success: res.data };
-            },
-            err => {
-                return { error: err.response.data.message };
-                //return { error: err.response.data };
-            }
-        );
-    }else{
-        return new Promise((valid, invalid) => {
-            return invalid('Email is required');
-        });
-    }
+    return axios.post('/api/users/forgot', { email: email });
+}
+
+/*
+ LoginPasswordForm password updater
+*/
+export function authPassword(token, password){
+    return axios.post('/api/users/forgot/password', {token: token, password: password});
 }

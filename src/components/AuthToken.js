@@ -16,59 +16,55 @@ class AuthToken extends React.Component {
         };
     }
     onLoadToken(){
-        const search = this.props.location.search;
-        const params = new URLSearchParams(search);
-        const token = params.get('token');
-        authToken(token)
-        .then(
-            res => {
-                if (res === true){
+        /*
+         Token via querystring.
+         Checking pathname as the login token will only be sent to /login
+        */
+        let token = '';
+        if (this.props.location.pathname === '/login'){
+            const search = this.props.location.search;
+            const params = new URLSearchParams(search);
+            token = params.get('token');
+        }
+        if (token){
+            authToken(token)
+            .then(
+                res => {
                     this.props.authLogin(token);
                     this.props.addFlashMessage({
                         type: 'success',
                         text: 'You have successfully logged in! Welcome!'
                     });
                     this.setState({ redirect_home: true });
-                }else{
+                },
+                err => {
                     this.props.authLogout();
                     this.setState({ redirect_login: true });
                 }
-            }
-        )
-        .catch(
-            err => {
-                /*
-                 No token passed in querystring - let's try read a cookie
-                */
-                this.onLoadLocal();
-            }
-        );
+            );
+        }else{
+            this.onLoadLocal();
+        }
     }
     onLoadLocal(){
         /*
-         Load from cookie.jwt or localStorage - depending on how you store
+         Token from cookie OR localStorage - depending on how you store
         */
         // let token = localStorage.getItem('jwtToken');
         const token = cookie.load('jwt');
-        authToken(token)
-        .then(
-            res => {
-                if (res === true){
+        if (token){
+            authToken(token)
+            .then(
+                res => {
                     this.props.authLogin(token);
-                }else{
+                },
+                err => {
                     this.props.authLogout();
                 }
-            }
-        )
-        .catch(
-            err => {
-                /*
-                 Need to authLogout in order to set isAuthenticated to false for
-                 navigationBar and other stuff reading the store
-                */
-                this.props.authLogout();
-            }
-        );
+            );
+        }else{
+            this.props.authLogout();
+        }
     }
     componentWillMount(){
         this.onLoadToken();

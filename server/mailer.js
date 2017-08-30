@@ -13,28 +13,36 @@ if (config.mail_type == 'smtp'){
     /*
      SMTP - Localhost, Google, Yahoo etc..
     */
-    console.log('using mailer type smtp');
     transporter = nodemailer.createTransport({
-        host: config.mail_host,
-        port: config.mail_port,
+        host: config.smtp_host,
+        port: config.smtp_port
+    });
+}
+if (config.mail_type == 'smtp_auth'){
+    /*
+     SMTP - Localhost, Google, Yahoo etc..
+    */
+    transporter = nodemailer.createTransport({
+        host: config.smtp_host,
+        port: config.smtp_port,
         auth: {
-            user: config.mail_user,
-            pass: config.mail_pass
+            user: config.smtp_auth_user,
+            pass: config.smtp_auth_pass
         }
     });
 }
-if (config.mail_type == 'aws-ses'){
+if (config.mail_type == 'aws_ses'){
     /*
      Amazon SES - Send Simple Email
     */
-    // aws.config = {
-    //     accessKeyId: config.mail_aws_ses_key_id,
-    //     secretAccessKey: config.mail_aws_ses_key_secret,
-    //     region: 'us-west-2'
-    // }
     transporter = nodemailer.createTransport({
         SES: new aws.SES(
-            { apiVersion: '2010-12-01' }
+            {
+                apiVersion: '2010-12-01',
+                accessKeyId: config.aws_iam_id,
+                secretAccessKey: config.aws_iam_key,
+                region: config.aws_ses_region
+            }
         )
     });
 }

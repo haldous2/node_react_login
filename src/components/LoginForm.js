@@ -34,31 +34,27 @@ class LoginForm extends React.Component {
         this.onLoginFacebook = this.onLoginFacebook.bind(this);
         this.onForgotPassword = this.onForgotPassword.bind(this);
     }
-    isEmpty(obj){
-        return Object.keys(obj).length === 0 && obj.constructor === Object
-    }
     onChange(e){
         // this.setState({ username: e.target.value });
         this.setState({ [e.target.name]: e.target.value });
     }
-    isValid(){
-        const { errors } = validateInput(this.state);
+    isValidInput(){
+        const { errors, isValid } = validateInput(this.state);
         return new Promise((valid, invalid) => {
             this.setState({ errors });
-            return valid(this.isEmpty(errors));
+            return valid(isValid);
         });
     }
     isValidEmail(){
-        const { errors } = validateEmail(this.state);
+        const { errors, isValid } = validateEmail(this.state);
         return new Promise((valid, invalid) => {
             this.setState({ errors });
-            return valid(this.isEmpty(errors));
+            return valid(isValid);
         });
     }
     onSubmit(e){
         e.preventDefault();
-
-        this.isValid()
+        this.isValidInput()
         .then(
             (isValid) => {
                 if (isValid){
@@ -66,21 +62,22 @@ class LoginForm extends React.Component {
                     authCredentials(this.state)
                     .then(
                         res => {
-                            if (res.success){
-                                this.props.authLogin(res.success.token);
-                                this.props.addFlashMessage({
-                                    type: 'success',
-                                    text: 'You have successfully logged in! Welcome!'
-                                });
-                                this.setState({ isLoading: false, redirect_home: true });
+                            this.props.authLogin(res.data);
+                            this.props.addFlashMessage({
+                                type: 'success',
+                                text: 'You have successfully logged in! Welcome!'
+                            });
+                            this.setState({ isLoading: false, errors: { form: ''}, redirect_home: true });
+                        },
+                        err => {
+                            if (err.response.status === 400){
+                                // This shouldn't happen
+                                this.setState({ isLoading: false, errors: { form: 'Invalid Input'} });
                             }
-                            if (res.error){
-                                this.setState({ isLoading: false, errors: res.error });
+                            if (err.response.status === 401){
+                                this.setState({ isLoading: false, errors: { form: 'Invalid Credentials'} });
                             }
                         }
-                    )
-                    .catch(
-                        err => {}
                     );
                 }
             }
@@ -95,41 +92,39 @@ class LoginForm extends React.Component {
     }
     onForgotPassword(e){
         e.preventDefault();
-
-        let errors = {};
-        let success = {};
-
         this.isValidEmail()
         .then(
             isValid => {
                 if (isValid){
-
                     forgotPassword(this.state.email)
                     .then(
                         res => {
-                            if (res.success){
-                                errors = { form: '' };
-                                success = { form: res.success };
-                                this.setState({ errors: errors, success: success });
+                            this.setState({
+                                errors: { email: '' },
+                                success: { form: 'Password reset link has been sent!' }
+                            });
+                        },
+                        err => {
+                            if (err.response.status === 400){
+                                this.setState({
+                                    errors: { email: 'Email is not valid' },
+                                    success: { form: '' }
+                                });
                             }
-                            if (res.error){
-                                errors = { form: res.error };
-                                success = { form: '' };
-                                this.setState({ errors: errors, success: success });
+                            if (err.response.status === 401){
+                                this.setState({
+                                    errors: { email: 'Email is not registered' },
+                                    success: { form: '' }
+                                });
                             }
                         }
-                    )
-                    .catch(
-                        err => {}
                     );
                 }
             }
         );
     }
     render(){
-
         const { errors, success, redirect_home } = this.state;
-
         if (redirect_home) {
             return (
                 <Redirect to='/' />

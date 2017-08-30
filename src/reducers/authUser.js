@@ -1,5 +1,6 @@
 
 import { SET_CURRENT_USER } from '../actions/types';
+import { isEmptyObj } from '../utilities/helper';
 
 const initialState = {
     isAuthenticated: null,
@@ -12,14 +13,10 @@ export default (state = initialState, action = {}) => {
 
         case SET_CURRENT_USER:
             return {
-                isAuthenticated: !isEmpty(action.user),
+                isAuthenticated: !isEmptyObj(action.user),
                 user: action.user
             };
 
         default: return state;
     }
-}
-
-function isEmpty(obj){
-    return Object.keys(obj).length === 0 && obj.constructor === Object
 }

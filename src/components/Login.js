@@ -7,7 +7,7 @@ class Login extends React.Component {
         return (
             <div className="row">
                 <div className="col-md-4 col-md-offset-4">
-                    <LoginForm {...this.props}/>
+                    <LoginForm />
                 </div>
             </div>
         );

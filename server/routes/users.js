@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const config = require('../config');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const { isEmptyObj } = require('../../src/utilities/helper');
 
 let router = express.Router();
 
@@ -112,15 +113,15 @@ passport.use(
                     User
                     .forge({ id: user.id, fb_id: id, email: tEmail, first_name: first_name, last_name: last_name })
                     .save()
-                    .then(user => { db_user = user; })
-                    .catch(err => { console.log('error: ', err.message); });
+                    .then(user => { db_user = user; });
                 }else{
                     // New user - no id or email match
+                    const password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
+                    const password_digest = bcrypt.hashSync(password, 10);
                     User
-                    .forge({ fb_id: id, email: email, first_name: first_name, last_name: last_name })
+                    .forge({ fb_id: id, email: email, password_digest: password_digest, first_name: first_name, last_name: last_name })
                     .save()
-                    .then(user => { db_user = user; })
-                    .catch(err => { console.log('error: ', err.message); });
+                    .then(user => { db_user = user; });
                 }
              });
 
@@ -137,37 +138,38 @@ passport.use(
     )
 );
 
-router.get('/', function(req, res){
-    res.status(200).json( 'you have arrived @ api/users' );
-});
-
 /*
- Look for a duplicate email address in db
+ New signup
+ (convoluting on purpose)
+ 200:true (new signup)
+ 202:false (already signed up)
  ////////////////////////////////////////////////////////////////////////////////////////////////////
 */
+router.post('/newsignup', function(req, res) {
 
-router.get('/email/:identifier', function(req, res) {
+    let email = req.body.email;
 
-    let identifier = '';
-    identifier = req.params.identifier;
-    const { errors, isValid } = validateEmail({ email: identifier });
-
+    const { errors, isValid } = validateEmail({ email: email });
     if (isValid){
         User
         .where({
-            email: identifier
+            email: email
         })
         .fetch()
-        .then(user => {
-            if (user){
-                res.status(400).json({ errors: 'Email already exists' });
-            }else{
-                // User not found - this is good! - clear the error
-                res.status(200).json({ errors: '' });
+        .then(
+            user => {
+                if (user){
+                    // HTTP 202 - Accepted - User is a duplicate
+                    res.status(202).send();
+                }else{
+                    // HTTP 200 - OK - User is not a duplicate
+                    res.status(200).send();
+                }
             }
-        });
+        );
     }else{
-        res.status(400).json({ errors: 'Not an email address', identifier });
+        // HTTP 400 - Bad Request - email not valid
+        res.status(400).send();
     }
 });
 
@@ -181,33 +183,33 @@ router.post('/token', function(req, res) {
         jwt.verify(token, config.jwtSecret, (err, decoded) => {
             if (err){
                 // Token did not validate - expired, didn't verify against secret or just invalid
-                //console.log('server.routes.users: token is not valid');
-                res.status(401).json({ error: 'Failed to authenticate'});
+                res.status(401).send();
             }else{
                 User.query({
                     where: { id: decoded.id }
-                }).fetch().then(user => {
-                    if (user){
-                        const { status } = user.attributes;
-                        if (status == "Active"){
-                            //console.log('server.routes.users: Token is good!');
-                            res.status(200).json({ successs: 'Token is valid' });
+                })
+                .fetch()
+                .then(
+                    user => {
+                        if (user){
+                            const { status } = user.attributes;
+                            if (status == "Active"){
+                                res.status(200).send();
+                            }else{
+                                // User is not active
+                                res.status(401).send();
+                            }
                         }else{
-                            // User is not active
-                            //console.log('server.routes.users: user is not active');
-                            res.status(401).json({ error: 'Failed to authenticate' });
+                            // No user found at that id
+                            res.status(401).send();
                         }
-                    }else{
-                        // No user found at that id
-                        //console.log('server.routes.users: user not found');
-                        res.status(401).json({ error: 'Failed to authenticate' });
                     }
-                });
+                );
             }
         });
     }else{
-        //console.log('server.routes.users: token not provided')
-        res.status(403).json({ error: 'No token provided' });
+        // Token is required
+        res.status(400).send();
     }
 });
 
@@ -218,110 +220,217 @@ router.post('/token', function(req, res) {
  ////////////////////////////////////////////////////////////////////////////////////////////////////
 */
 router.post('/login', function(req, res) {
-    let email = '';
-    if (req.body.email){
-        email = req.body.email;
-    }
-    let password = '';
-    if (req.body.password){
-        password = req.body.password;
-    }
+
+    let email = req.body.email;
+    let password = req.body.password;
+
     const { errors, isValid } = validateEmail({ email: email });
-    if (isValid){
+    if (isValid && password){
         User.query({
             where: { email: email }
-        }).fetch().then(user => {
-            if (user){
-                // Verify password
-                if (bcrypt.compareSync(password, user.get('password_digest'))){
-                    let payload = {
-                        id: user.get('id'),
-                        fb_id: '',
-                        email: user.get('email'),
-                        fb_access_token: '',
-                        fb_refresh_token: ''
+        })
+        .fetch()
+        .then(
+            user => {
+                if (user){
+                    // Verify password
+                    if (bcrypt.compareSync(password, user.get('password_digest'))){
+                        let payload = {
+                            id: user.get('id'),
+                            fb_id: '',
+                            email: user.get('email'),
+                            fb_access_token: '',
+                            fb_refresh_token: ''
+                        }
+                        let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
+                        res.status(200).send(token);
+                    }else{
+                        res.status(401).send();
                     }
-                    let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
-                    res.status(200).json({ token });
                 }else{
-                    res.status(401).json({ form: 'Invalid credentials' });
+                    res.status(401).send();
                 }
-            }else{
-                res.status(401).json({ form: 'Invalid credentials' });
             }
-        });
+        );
     }else{
-        res.status(401).json( errors );
+        // HTTP 400 - Bad Request - Email invalid
+        res.status(400).send();
     }
 });
 
 /*
  Forgot Password
- Lookup user, send password.
- If password not set (FB logged in before), generate password and send that
- If user not found, send error back
+
+  1. users enters email address, clicks forgot
+  2. email is sent with link back to www.../login/password?jwt_token
+     jwt_token includes email address, password update key and expiration date
+  3. user enters new password, token and new password to /api/users/forgot/password
+  200 or >200 back to authActions ...
+  4. token is verified
+         all is good: update password, clear token - flash message 'password udpated'
+         not good: send back to /login
+
  ////////////////////////////////////////////////////////////////////////////////////////////////////
 */
-function sendForgot(user){
+function sendForgotLink(user, origin){
+    /*
+     Send password update link
+    */
 
-    if (typeof(user) != 'object' || !user.id){
-        return
+    // variables
+    const { email, password_update_key } = user;
+
+    // token-ize
+    let payload = {
+        email: email,
+        password_update_key: password_update_key
     }
+    let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
 
-    // generate new password and digest
-    const new_password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
-    const password_digest = bcrypt.hashSync(new_password, 10);
-
-    // udpate user
-    User
-    .forge({ id: user.id, password_digest: password_digest })
-    .save()
-    .then(user => { })
-    .catch(err => { console.log('error: ', err.message); });
-
-    // setup email data with unicode symbols
+    // message setup
     let mailOptions = {
-        from: 'messages@n2local.com',
-        to: user.attributes.email,
-        subject: 'Your password',
-        text: 'Your password is ' + new_password,
-        html: 'Your password is <b>' + new_password + '</b>'
+        from: '"N2Local Messages" <messages@n2local.com>',
+        to: email,
+        subject: 'Password reset link',
+        text: 'Go to: '+ origin +'/login/password?token=' + token + ' to change your password.',
+        html: '<a href="'+ origin +'/login/password?token=' + token + '">Click here to change your password.</a>'
     };
 
     // send mail with defined transport object
     if (transporter){
         transporter.sendMail(mailOptions, (error, info) => {
-            if (error) { console.log('sendMail error:', error); }
-            console.log('Message %s sent: %s', info.messageId, info.response);
+            if (error) {
+                console.log('transporter error:', error.message);
+            }
+        });
+    }
+}
+function sendForgotSuccess(user){
+    /*
+     Message user that their password has been udpated
+     ** not sending clear text password at this time - although you can I suppose
+    */
+
+    const { email } = user;
+
+    // message setup
+    let mailOptions = {
+        from: '"N2Local Messages" <messages@n2local.com>',
+        to: email,
+        subject: 'Your password has been updated',
+        text: 'Your password has been updated',
+        html: 'Your password has been updated'
+    };
+
+    // send mail with defined transport object
+    if (transporter){
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log('transporter error:', error.message);
+            }
         });
     }
 }
 router.post('/forgot', function(req, res) {
-    let email = '';
-    if (req.body.email){
-        email = req.body.email;
+
+    let email = req.body.email;
+    let origin = req.headers.origin;
+    if (!origin){
+        origin = 'http://localhost';
     }
+
     const { errors, isValid } = validateEmail({ email: email });
-    if (isValid){
+    if (isValid && origin){
         User.query({
             where: { email: email }
-        }).fetch().then(user => {
-            if (user){
-                /*
-                 User found
-                 if password - send password
-                 if not password - generate one and send
-                */
-                sendForgot(user);
-                res.status(200).json({ message: 'Password has been sent!' });
+        })
+        .fetch()
+        .then(
+            user => {
+                if (user){
+                    if (user.attributes.password_update_key){
+                        sendForgotLink({ email: email, password_update_key: user.attributes.password_update_key }, origin);
+                    }else{
+                        /*
+                         password_update_key
+                         used to track if user has updated their password. Once they update
+                         this field will clear out. Otherwise the passed token will contain this key
+                        */
+                        const password_update_key = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
+                        User
+                        .forge(
+                            { id: user.id, password_update_key: password_update_key }
+                        )
+                        .save()
+                        .then(
+                            user => {
+                                sendForgotLink({ email: email, password_update_key: password_update_key }, origin);
+                            }
+                        );
+                    }
+                    res.status(200).send();
+                }else{
+                    // HTTP 401 - Unauthorized - Not registered
+                    res.status(401).send();
+                }
+            }
+        );
+    }else{
+        // HTTP 400 - Bad Request - Email invalid, missing origin
+        res.status(400).send();
+    }
+});
+router.post('/forgot/password', function(req, res) {
+    /*
+     User entered new password and clicked submit (from React page)
+     Verify token, find user and update password
+    */
+
+    let token = req.body.token;
+    let password = req.body.password;
+
+    if (token && password){
+        jwt.verify(token, config.jwtSecret, (err, decoded) => {
+            if (!err){
+                // Token is valid - extract email
+                let email = decoded.email;
+                let password_update_key = decoded.password_update_key;
+                if (email && password_update_key){
+                    User.query({
+                        where: { email: email, password_update_key: password_update_key }
+                    })
+                    .fetch()
+                    .then(user => {
+                        if (user){
+                            // Validate password_update_key in order to make this a one time use token?
+                            const password_digest = bcrypt.hashSync(password, 10);
+                            User
+                            .forge({ id: user.id, password_digest: password_digest })
+                            //.forge({ id: user.id, password_digest: password_digest, password_update_key: '' })
+                            .save()
+                            .then(user => {
+                                // Notify user password has been changed
+                                sendForgotSuccess({ email: email });
+                            });
+                            // HTTP 200 - Success - Everything went according to plan, kick your feet up
+                            res.status(200).send();
+                        }else{
+                            // HTTP 401 - Unauthorized - User not found
+                            res.status(401).send();
+                        }
+                    });
+                }else{
+                    // HTTP 400 - Bad Request - missing email or password update key
+                    res.status(400).send();
+                }
             }else{
-                // HTTP 401 - Unauthorized
-                res.status(401).json({ message: 'Not registered' });
+                // HTTP 401 - Unauthorized - Invalid token
+                res.status(401).send();
             }
         });
     }else{
-        // HTTP 400 - Bad Request
-        res.status(400).json({ message: 'Email is not valid' });
+        // HTTP 400 - Bad Request - Token & password required
+        res.status(400).send();
     }
 });
 
@@ -349,7 +458,6 @@ router.get(
         { session: false, scope: ['email'] }
     )
 );
-
 router.get(
     '/facebook/callback',
     passport.authenticate(
@@ -401,62 +509,69 @@ router.get('/secret_auth_custom', authenticate, function(req, res){
 function validateInputPromise(data){
     return new Promise((valid, invalid) => {
         let { errors } = validateInput(data);
-        valid({ errors, isValid: isEmpty(errors) });
+        valid({ errors, isValid: isEmptyObj(errors) });
     });
 }
 function validateData(data){
     return validateInputPromise(data)
-    .then(({ errors, isValid }) => {
-        if (isValid) {
-            return User.where({
-                email: data.email
-            }).fetch().then(user => {
-                if (user) {
-                    errors.email = 'There is already a user with this email';
-                }
+    .then(
+        ({ errors, isValid }) => {
+            if (isValid) {
+                return User.where({
+                    email: data.email
+                })
+                .fetch()
+                .then(
+                    user => {
+                        if (user) {
+                            errors.email = 'There is already a user with this email';
+                        }
+                        return {
+                            errors,
+                            isValid: isEmptyObj(errors)
+                        }
+                    }
+                );
+            }else{
                 return {
                     errors,
-                    isValid: isEmpty(errors)
-                };
-            });
+                    isValid: isEmptyObj(errors)
+                }
+            }
         }
-    });
+    );
 }
-function isEmpty(obj){
-    return Object.keys(obj).length === 0 && obj.constructor === Object
-}
-
-router.post('/', function(req, res) {
-
+router.post('/signup', function(req, res) {
     validateData(req.body)
-
-    .then(({ errors, isValid }) => {
-
-        if (isValid){
-
-            const { email, password, first_name, last_name } = req.body;
-            const password_digest = bcrypt.hashSync(password, 10);
-
-            /*
-            bookshelf.model.forge: A simple helper function to instantiate a new Model without needing new.
-                [attributes] Object                 ## initial values e.g. first_name, last_name etc... (order ??)
-                [options] Object
-                    [tableName] string              ## Initial value for tableName.
-                    [hasTimestamps=false] boolean   ## Initial value for hasTimestamps.
-                    [parse=false] boolean           ## Convert attributes by parse before being set on the model.
-                .save()                             ## Returns promise for .then, .catch
-
-            */
-            User.forge({
-                email, password_digest, first_name, last_name
-            },{ hasTimestamps: true }).save()
-            .then(user => res.status(200).json({ success: true }))
-            .catch(err => res.status(400).json({ errors: err }));
-
-        }else{
-            res.status(400).json({ errors: errors });
+    .then(
+        ({ errors, isValid }) => {
+            if (isValid){
+                const { email, password, first_name, last_name } = req.body;
+                const password_digest = bcrypt.hashSync(password, 10);
+                /*
+                bookshelf.model.forge: A simple helper function to instantiate a new Model without needing new.
+                    [attributes] Object                 ## initial values e.g. first_name, last_name etc... (order ??)
+                    [options] Object
+                        [tableName] string              ## Initial value for tableName.
+                        [hasTimestamps=false] boolean   ## Initial value for hasTimestamps.
+                        [parse=false] boolean           ## Convert attributes by parse before being set on the model.
+                    .save()                             ## Returns promise for .then, .catch
+                */
+                User.forge(
+                    { email, password_digest, first_name, last_name },
+                    { hasTimestamps: true }
+                )
+                .save()
+                .then(
+                    user => {
+                        res.status(200).send();
+                    }
+                );
+            }else{
+                res.status(400).json({ errors: errors });
+            }
         }
-    });
+    );
 });
 
 module.exports = router;

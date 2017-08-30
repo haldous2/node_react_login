@@ -18,6 +18,7 @@ import {
 import AuthToken from './components/AuthToken';
 import Home from './components/Home';
 import Login from './components/Login';
+import LoginPassword from './components/LoginPassword';
 import MySite from './components/MySite';
 import SignUp from './components/SignUp';
 import HTTP404 from './components/HTTP404';
@@ -43,6 +44,7 @@ class App extends React.Component {
                         <FlashMessagesList />
                         <Switch>
                             <Route exact path="/" component={Home} />
+                            <Route path="/login/password" component={LoginPassword} />
                             <Route path="/login" component={Login} />
                             <Route path="/mysite" component={requireAuth(MySite)} />
                             <Route path="/signup" component={SignUp} />
