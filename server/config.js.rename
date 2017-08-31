@@ -2,6 +2,11 @@
 /*
  Config options - store passwords and connection info here
 
+Note: sv_sitename: Name of website        e.g. My awesome website
+      sv_scheme:  url scheme              e.g. http, https
+      sv_fqdn:    should be FQDN          e.g. www.yourdomain.com
+      sv_domain:  just the domain part    e.g. yourdomain.com (using this for outgoing emails)
+
 Note: npm install nodemailer
 
 Note: mail_type: smtp, smtp_auth, aws_ses
@@ -28,9 +33,15 @@ Note: aws-sdk
             }
         ]
     }
+
 */
 
 module.exports = {
+
+    sv_sitename: 'My cool website name',
+    sv_scheme: 'http',
+    sv_fqdn: 'www.yourdomain.com',
+    sv_domain: 'yourdomain.com',
 
     db_host: '',
     db_data: '',
@@ -52,4 +63,5 @@ module.exports = {
     aws_ses_region: '',
     aws_iam_id: '',
     aws_iam_key: ''
+    
 }

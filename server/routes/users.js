@@ -75,7 +75,6 @@ passport.use(
             _raw: '{"name":"John Doe","id":"0000000000"}',
             _json: { name: 'John Doe', id: '0000000000' }
         }
-
 */
 var FacebookStrategy = passportFacebook.Strategy;
 passport.use(
@@ -88,52 +87,109 @@ passport.use(
         },
         function(accessToken, refreshToken, profile, next) {
 
+            // facebook returned vars
             let { id, email, first_name, last_name } = profile._json;
-            let db_user = {};
+            let fb_id = id;
 
+            // in case something comes back undefined - string it up
+            if (email === undefined){ email = ''; }
+            if (first_name === undefined){ first_name = ''; }
+            if (last_name === undefined){ last_name = ''; }
+
+            let tAccessToken = '';
+            if (accessToken){ tAccessToken = accessToken; }
+            let tRefreshToken = '';
+            if (refreshToken){ tRefreshToken = refreshToken; }
+
+            // query to keep duplicates from happening in users
             let query = {};
             if (email){
-                query = {where: {email: email}, orWhere: {fb_id: id}}
+                query = { where: {email: email}, orWhere: {fb_id: fb_id} }
             }else{
-                query = {where: {fb_id: id}}
+                query = { where: {fb_id: fb_id} }
             }
 
             User
             .query(query)
             .fetch()
-            .then((user)=>{
-                if (user){
-                    // Update user - id or email match
-                    let tEmail;
-                    if (user.email){
-                        tEmail = user.email;
-                    }else{
-                        tEmail = email;
-                    }
-                    User
-                    .forge({ id: user.id, fb_id: id, email: tEmail, first_name: first_name, last_name: last_name })
-                    .save()
-                    .then(user => { db_user = user; });
-                }else{
-                    // New user - no id or email match
-                    const password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
-                    const password_digest = bcrypt.hashSync(password, 10);
-                    User
-                    .forge({ fb_id: id, email: email, password_digest: password_digest, first_name: first_name, last_name: last_name })
-                    .save()
-                    .then(user => { db_user = user; });
-                }
-             });
+            .then(
+                user => {
+                    if (user){
 
-             return next(null, {
-                 id: db_user.id,
-                 fb_id: db_user.fb_id,
-                 email: db_user.email,
-                 fb_access_token: accessToken,
-                 fb_refresh_token: refreshToken,
-                 first_name: db_user.first_name,
-                 last_name: db_user.last_name
-             });
+                        // Updating user
+
+                        // Prefer local user data. If not user data try updating from FB
+                        let tEmail = '';
+                        if (user.email){
+                            tEmail = user.email;
+                        }else{
+                            tEmail = email;
+                        }
+                        let tFirstName = '';
+                        if (user.first_name){
+                            tFirstName = user.first_name;
+                        }else{
+                            tFirstName = first_name;
+                        }
+                        let tLastName = '';
+                        if (user.last_name){
+                            tLastName = user.last_name;
+                        }else{
+                            tLastName = last_name;
+                        }
+
+                        User
+                        // .forge()
+                        // .where({ id: user.id })
+                        // .save({ fb_id: fb_id, email: tEmail, first_name: first_name, last_name: last_name })
+                        .forge({
+                            id: user.id,
+                            fb_id: parseInt(fb_id),
+                            email: tEmail,
+                            first_name: tFirstName,
+                            last_name: tLastName
+                        })
+                        .save()
+                        .then(user => {
+                            let db_user = {
+                                id: user.id,
+                                fb_id: parseInt(fb_id),
+                                email: tEmail,
+                                fb_access_token: tAccessToken,
+                                fb_refresh_token: tRefreshToken
+                            }
+                            return next(null, db_user);
+                        });
+
+                    }else{
+
+                        // New user - no fb_id or email match
+                        const password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
+                        const password_digest = bcrypt.hashSync(password, 10);
+
+                        User
+                        .forge({
+                            fb_id: parseInt(fb_id),
+                            email: email,
+                            password_digest: password_digest,
+                            first_name: first_name,
+                            last_name: last_name
+                        })
+                        .save()
+                        .then(user => {
+
+                            let db_user = {
+                                id: user.id,
+                                fb_id: parseInt(fb_id),
+                                email: email,
+                                fb_access_token: tAccessToken,
+                                fb_refresh_token: tRefreshToken
+                            }
+                            return next(null, db_user);
+                        });
+                    }
+                }
+            );
         }
     )
 );
@@ -272,13 +328,16 @@ router.post('/login', function(req, res) {
 
  ////////////////////////////////////////////////////////////////////////////////////////////////////
 */
-function sendForgotLink(user, origin){
+function sendForgotLink(user){
     /*
      Send password update link
     */
 
     // variables
     const { email, password_update_key } = user;
+    const origin = config.sv_scheme + '://' + config.sv_fqdn;
+    const domain = config.sv_domain;
+    const sitename = config.sv_sitename;
 
     // token-ize
     let payload = {
@@ -289,7 +348,7 @@ function sendForgotLink(user, origin){
 
     // message setup
     let mailOptions = {
-        from: '"N2Local Messages" <messages@n2local.com>',
+        from: '"'+ sitename +' Messages" <messages@'+ domain +'>',
         to: email,
         subject: 'Password reset link',
         text: 'Go to: '+ origin +'/login/password?token=' + token + ' to change your password.',
@@ -312,10 +371,13 @@ function sendForgotSuccess(user){
     */
 
     const { email } = user;
+    const origin = config.sv_scheme + '://' + config.sv_fqdn;
+    const domain = config.sv_domain;
+    const sitename = config.sv_sitename;
 
     // message setup
     let mailOptions = {
-        from: '"N2Local Messages" <messages@n2local.com>',
+        from: '"'+ sitename +' Messages" <messages@'+ domain +'>',
         to: email,
         subject: 'Your password has been updated',
         text: 'Your password has been updated',
@@ -334,13 +396,9 @@ function sendForgotSuccess(user){
 router.post('/forgot', function(req, res) {
 
     let email = req.body.email;
-    let origin = req.headers.origin;
-    if (!origin){
-        origin = 'http://localhost';
-    }
 
     const { errors, isValid } = validateEmail({ email: email });
-    if (isValid && origin){
+    if (isValid){
         User.query({
             where: { email: email }
         })
@@ -349,7 +407,7 @@ router.post('/forgot', function(req, res) {
             user => {
                 if (user){
                     if (user.attributes.password_update_key){
-                        sendForgotLink({ email: email, password_update_key: user.attributes.password_update_key }, origin);
+                        sendForgotLink({ email: email, password_update_key: user.attributes.password_update_key });
                     }else{
                         /*
                          password_update_key
@@ -364,7 +422,7 @@ router.post('/forgot', function(req, res) {
                         .save()
                         .then(
                             user => {
-                                sendForgotLink({ email: email, password_update_key: password_update_key }, origin);
+                                sendForgotLink({ email: email, password_update_key: password_update_key });
                             }
                         );
                     }
@@ -376,7 +434,7 @@ router.post('/forgot', function(req, res) {
             }
         );
     }else{
-        // HTTP 400 - Bad Request - Email invalid, missing origin
+        // HTTP 400 - Bad Request - Email invalid
         res.status(400).send();
     }
 });
