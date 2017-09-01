@@ -21,7 +21,7 @@ module.exports.validatePassword = function validatePassword(data){
             }
         }
     }else{
-        errors.password = 'Password is undefined';
+        errors.password = 'Password is required';
     }
 
     return {
@@ -66,7 +66,7 @@ module.exports.validateInput = function validateInput(data){
             errors.email = 'Email is required';
         }else{
             if (!Validator.isEmail(email)){
-                errors.email = 'This email is invalid';
+                errors.email = 'Email is invalid';
             }
         }
     }else{
@@ -75,12 +75,18 @@ module.exports.validateInput = function validateInput(data){
 
     if (password){
         if (Validator.isEmpty(password)){
-            errors.password = 'This field is required';
+            errors.password = 'Password is required';
         }else{
-            // password format ?
+            /*
+             Do something with password format validations
+             if you want.. e.g., password length, upper, lower caset etc..
+            */
+            if (password.length < 8){
+                errors.password = 'Password should be at least 8 characters long';
+            }
         }
     }else{
-        errors.password = 'This field is required';
+        errors.password = 'Password is required';
     }
 
     return {

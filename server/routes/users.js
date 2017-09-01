@@ -44,9 +44,7 @@ passport.use(
                 if (user){
                     const { id, email, first_name, last_name } = user.attributes;
                     const objUser = { id: id,
-                                      email: email,
-                                      first_name: first_name,
-                                      last_name: last_name
+                                      email: email
                                     };
                     next('message', objUser);
                 }else{
@@ -102,6 +100,8 @@ passport.use(
             if (refreshToken){ tRefreshToken = refreshToken; }
 
             // query to keep duplicates from happening in users
+            // note: always get back fb_id,
+            //       email from fb is optional (user might have logged in with phone #)
             let query = {};
             if (email){
                 query = { where: {email: email}, orWhere: {fb_id: fb_id} }
@@ -116,9 +116,12 @@ passport.use(
                 user => {
                     if (user){
 
-                        // Updating user
+                        /*
+                         Update user
+                         fb_id or email were a match
+                        */
 
-                        // Prefer local user data. If not user data try updating from FB
+                        // Prefer local user data. If not user data try updating from fb
                         let tEmail = '';
                         if (user.email){
                             tEmail = user.email;
@@ -139,9 +142,18 @@ passport.use(
                         }
 
                         User
+                        // Save by where() then save()
                         // .forge()
                         // .where({ id: user.id })
-                        // .save({ fb_id: fb_id, email: tEmail, first_name: first_name, last_name: last_name })
+                        // .save({
+                        //     fb_id: fb_id,
+                        //     email: tEmail,
+                        //     first_name: tFirstName,
+                        //     last_name: tLastName
+                        // })
+                        // OR.. Save by forge() directly
+                        //      bookshelf looks at id and either inserts or updates record
+                        //      or by whatever key is setup in model as index key, default is id
                         .forge({
                             id: user.id,
                             fb_id: parseInt(fb_id),
@@ -163,7 +175,12 @@ passport.use(
 
                     }else{
 
-                        // New user - no fb_id or email match
+                        /*
+                         New User!
+                         no fb_id or email match
+                        */
+
+                        // Generate a new password for this user
                         const password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
                         const password_digest = bcrypt.hashSync(password, 10);
 
@@ -177,7 +194,6 @@ passport.use(
                         })
                         .save()
                         .then(user => {
-
                             let db_user = {
                                 id: user.id,
                                 fb_id: parseInt(fb_id),
@@ -193,41 +209,6 @@ passport.use(
         }
     )
 );
-
-/*
- New signup
- (convoluting on purpose)
- 200:true (new signup)
- 202:false (already signed up)
- ////////////////////////////////////////////////////////////////////////////////////////////////////
-*/
-router.post('/newsignup', function(req, res) {
-
-    let email = req.body.email;
-
-    const { errors, isValid } = validateEmail({ email: email });
-    if (isValid){
-        User
-        .where({
-            email: email
-        })
-        .fetch()
-        .then(
-            user => {
-                if (user){
-                    // HTTP 202 - Accepted - User is a duplicate
-                    res.status(202).send();
-                }else{
-                    // HTTP 200 - OK - User is not a duplicate
-                    res.status(200).send();
-                }
-            }
-        );
-    }else{
-        // HTTP 400 - Bad Request - email not valid
-        res.status(400).send();
-    }
-});
 
 /*
  Authorize token
@@ -250,6 +231,7 @@ router.post('/token', function(req, res) {
                         if (user){
                             const { status } = user.attributes;
                             if (status == "Active"){
+                                // User is active
                                 res.status(200).send();
                             }else{
                                 // User is not active
@@ -449,29 +431,43 @@ router.post('/forgot/password', function(req, res) {
 
     if (token && password){
         jwt.verify(token, config.jwtSecret, (err, decoded) => {
+
             if (!err){
+
                 // Token is valid - extract email
                 let email = decoded.email;
                 let password_update_key = decoded.password_update_key;
+
+                // Match email and password_update_key
+                // Note: matching password_update_key so this token is one time use only
                 if (email && password_update_key){
                     User.query({
-                        where: { email: email, password_update_key: password_update_key }
+                        where: {
+                            email: email,
+                            password_update_key: password_update_key
+                        }
                     })
                     .fetch()
                     .then(user => {
                         if (user){
-                            // Validate password_update_key in order to make this a one time use token?
+
                             const password_digest = bcrypt.hashSync(password, 10);
+
                             User
-                            .forge({ id: user.id, password_digest: password_digest })
-                            //.forge({ id: user.id, password_digest: password_digest, password_update_key: '' })
+                            .forge({
+                                id: user.id,
+                                password_digest: password_digest,
+                                password_update_key: ''
+                            })
                             .save()
                             .then(user => {
                                 // Notify user password has been changed
                                 sendForgotSuccess({ email: email });
                             });
+
                             // HTTP 200 - Success - Everything went according to plan, kick your feet up
                             res.status(200).send();
+
                         }else{
                             // HTTP 401 - Unauthorized - User not found
                             res.status(401).send();
@@ -564,72 +560,48 @@ router.get('/secret_auth_custom', authenticate, function(req, res){
  ////////////////////////////////////////////////////////////////////////////////////////////////////
  look for duplicates first of course
 */
-function validateInputPromise(data){
-    return new Promise((valid, invalid) => {
-        let { errors } = validateInput(data);
-        valid({ errors, isValid: isEmptyObj(errors) });
-    });
-}
-function validateData(data){
-    return validateInputPromise(data)
-    .then(
-        ({ errors, isValid }) => {
-            if (isValid) {
-                return User.where({
-                    email: data.email
-                })
-                .fetch()
-                .then(
-                    user => {
-                        if (user) {
-                            errors.email = 'There is already a user with this email';
+router.post('/signup', function(req, res) {
+
+    const { email, password, first_name, last_name } = req.body;
+
+    const { errors, isValid } = validateInput({ email: email, password: password });
+    if (isValid){
+        User
+        .where({ email: email })
+        .fetch()
+        .then(
+            user => {
+                if (user){
+                    // HTTP 202 - Accepted - User is a duplicate
+                    res.status(202).send();
+                }else{
+                    const password_digest = bcrypt.hashSync(password, 10);
+                    /*
+                    bookshelf.model.forge: A simple helper function to instantiate a new Model without needing new.
+                        [attributes] Object                 ## initial values e.g. first_name, last_name etc... (order ??)
+                        [options] Object
+                            [tableName] string              ## Initial value for tableName.
+                            [hasTimestamps=false] boolean   ## Initial value for hasTimestamps.
+                            [parse=false] boolean           ## Convert attributes by parse before being set on the model.
+                        .save()                             ## Returns promise for .then, .catch
+                    */
+                    User.forge(
+                        { email, password_digest, first_name, last_name },
+                        { hasTimestamps: true }
+                    )
+                    .save()
+                    .then(
+                        user => {
+                            res.status(200).send();
                         }
-                        return {
-                            errors,
-                            isValid: isEmptyObj(errors)
-                        }
-                    }
-                );
-            }else{
-                return {
-                    errors,
-                    isValid: isEmptyObj(errors)
+                    );
                 }
             }
-        }
-    );
-}
-router.post('/signup', function(req, res) {
-    validateData(req.body)
-    .then(
-        ({ errors, isValid }) => {
-            if (isValid){
-                const { email, password, first_name, last_name } = req.body;
-                const password_digest = bcrypt.hashSync(password, 10);
-                /*
-                bookshelf.model.forge: A simple helper function to instantiate a new Model without needing new.
-                    [attributes] Object                 ## initial values e.g. first_name, last_name etc... (order ??)
-                    [options] Object
-                        [tableName] string              ## Initial value for tableName.
-                        [hasTimestamps=false] boolean   ## Initial value for hasTimestamps.
-                        [parse=false] boolean           ## Convert attributes by parse before being set on the model.
-                    .save()                             ## Returns promise for .then, .catch
-                */
-                User.forge(
-                    { email, password_digest, first_name, last_name },
-                    { hasTimestamps: true }
-                )
-                .save()
-                .then(
-                    user => {
-                        res.status(200).send();
-                    }
-                );
-            }else{
-                res.status(400).json({ errors: errors });
-            }
-        }
-    );
+        );
+    }else{
+        // HTTP 400 - Bad Request - email or password screwed up
+        res.status(400).send();
+    }
 });
 
 module.exports = router;
