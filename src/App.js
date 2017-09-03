@@ -6,8 +6,7 @@ import thunk from 'redux-thunk';
 import rootReducer from './rootReducer';
 import requireAuth from './utilities/requireAuth';
 
-// import cookie from 'react-cookies';
-// import { setCurrentUser, authToken } from './actions/authActions';
+import { Grid } from 'react-bootstrap';
 
 import {
   BrowserRouter,
@@ -41,15 +40,17 @@ class App extends React.Component {
                     <div>
                         <Route component={AuthToken} />
                         <NavigationBar />
-                        <FlashMessagesList />
-                        <Switch>
-                            <Route exact path="/" component={Home} />
-                            <Route path="/login/password" component={LoginPassword} />
-                            <Route path="/login" component={Login} />
-                            <Route path="/mysite" component={requireAuth(MySite)} />
-                            <Route path="/signup" component={SignUp} />
-                            <Route path="*" component={HTTP404} />
-                        </Switch>
+                        <Grid>
+                            <FlashMessagesList />
+                            <Switch>
+                                <Route exact path="/" component={Home} />
+                                <Route path="/login/password" component={LoginPassword} />
+                                <Route path="/login" component={Login} />
+                                <Route path="/mysite" component={requireAuth(MySite)} />
+                                <Route path="/signup" component={SignUp} />
+                                <Route path="*" component={HTTP404} />
+                            </Switch>
+                        </Grid>
                     </div>
                 </BrowserRouter>
             </Provider>

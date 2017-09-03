@@ -92,32 +92,29 @@ class LoginPasswordForm extends React.Component {
             )
         }
         return (
-            <div className="row">
+            <form>
 
-                <form>
+                <h1>Change Password</h1>
 
-                    <h1>Change Password</h1>
+                { success.form && <div className="alert alert-success">{success.form}</div>}
+                { errors.form && <div className="alert alert-danger">{errors.form}</div>}
 
-                    { success.form && <div className="alert alert-success">{success.form}</div>}
-                    { errors.form && <div className="alert alert-danger">{errors.form}</div>}
+                <InputField
+                    field="password"
+                    value={this.state.password}
+                    type="password"
+                    label="Password"
+                    onChange={this.onChange}
+                    error={errors.password}
+                />
 
-                    <InputField
-                        field="password"
-                        value={this.state.password}
-                        type="password"
-                        label="Password"
-                        onChange={this.onChange}
-                        error={errors.password}
-                    />
+                <div className="form-group">
+                    <button disabled={this.state.isLoading} onClick={this.onSubmit} className="btn btn-primary btn-block btn-lg">
+                        Update Password
+                    </button>
+                </div>
 
-                    <div className="form-group">
-                        <button disabled={this.state.isLoading} onClick={this.onSubmit} className="btn btn-primary btn-block btn-lg">
-                            Update Password
-                        </button>
-                    </div>
-
-                </form>
-            </div>
+            </form>
         );
     }
 }

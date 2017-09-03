@@ -13,7 +13,9 @@ class FlashMessagesList extends React.Component {
             <FlashMessagesDetail key={message.id} message={message} deleteFlashMessage={deleteFlashMessage} />
         );
         return(
-            <div>{messages}</div>
+            <div className='col-md-12' style={{display: (messages.length ? '' : 'none')}}>
+                {messages}
+            </div>
         );
     }
 }

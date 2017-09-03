@@ -82,55 +82,53 @@ class SignUpForm extends React.Component {
             )
         }
         return (
-            <div className="row">
-                <form onSubmit={this.onSubmit}>
+            <form onSubmit={this.onSubmit}>
 
-                    <h1>Join our community!</h1>
+                <h1>Join our community!</h1>
 
-                    <InputField
-                        field="email"
-                        value={this.state.email}
-                        type="text"
-                        label="Email"
-                        onChange={this.onChange}
-                        error={errors.email}
-                    />
+                <InputField
+                    field="email"
+                    value={this.state.email}
+                    type="text"
+                    label="Email"
+                    onChange={this.onChange}
+                    error={errors.email}
+                />
 
-                    <InputField
-                        field="password"
-                        value={this.state.password}
-                        type="password"
-                        label="Password"
-                        onChange={this.onChange}
-                        error={errors.password}
-                    />
+                <InputField
+                    field="password"
+                    value={this.state.password}
+                    type="password"
+                    label="Password"
+                    onChange={this.onChange}
+                    error={errors.password}
+                />
 
-                    <InputField
-                        field="first_name"
-                        value={this.state.first_name}
-                        type="text"
-                        label="First Name"
-                        onChange={this.onChange}
-                        error={errors.first_name}
-                    />
+                <InputField
+                    field="first_name"
+                    value={this.state.first_name}
+                    type="text"
+                    label="First Name"
+                    onChange={this.onChange}
+                    error={errors.first_name}
+                />
 
-                    <InputField
-                        field="last_name"
-                        value={this.state.last_name}
-                        type="text"
-                        label="Last Name"
-                        onChange={this.onChange}
-                        error={errors.last_name}
-                    />
+                <InputField
+                    field="last_name"
+                    value={this.state.last_name}
+                    type="text"
+                    label="Last Name"
+                    onChange={this.onChange}
+                    error={errors.last_name}
+                />
 
-                    <div className="form-group">
-                        <button disabled={this.state.isLoading} className="btn btn-primary btn-block btn-lg">
-                            Sign Up
-                        </button>
-                    </div>
+                <div className="form-group">
+                    <button disabled={this.state.isLoading} className="btn btn-primary btn-block btn-lg">
+                        Sign Up
+                    </button>
+                </div>
 
-                </form>
-            </div>
+            </form>
         );
     }
 }

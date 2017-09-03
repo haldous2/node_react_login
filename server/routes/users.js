@@ -104,7 +104,7 @@ passport.use(
             //       email from fb is optional (user might have logged in with phone #)
             let query = {};
             if (email){
-                query = { where: {email: email}, orWhere: {fb_id: fb_id} }
+                query = { where: {fb_id: fb_id}, orWhere: {email: email} }
             }else{
                 query = { where: {fb_id: fb_id} }
             }
@@ -120,22 +120,23 @@ passport.use(
                          Update user
                          fb_id or email were a match
                         */
+                        console.log(user)
 
                         // Prefer local user data. If not user data try updating from fb
                         let tEmail = '';
-                        if (user.email){
+                        if (user.attributes.email){
                             tEmail = user.email;
                         }else{
                             tEmail = email;
                         }
                         let tFirstName = '';
-                        if (user.first_name){
+                        if (user.attributes.first_name){
                             tFirstName = user.first_name;
                         }else{
                             tFirstName = first_name;
                         }
                         let tLastName = '';
-                        if (user.last_name){
+                        if (user.attributes.last_name){
                             tLastName = user.last_name;
                         }else{
                             tLastName = last_name;

@@ -31,7 +31,6 @@ class LoginForm extends React.Component {
         /* either bind onChange here or for onClick in input element -- in constructor preferred */
         this.onChange = this.onChange.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
-        this.onLoginFacebook = this.onLoginFacebook.bind(this);
         this.onForgotPassword = this.onForgotPassword.bind(this);
     }
     onChange(e){
@@ -83,13 +82,6 @@ class LoginForm extends React.Component {
             }
         );
     }
-    onLoginFacebook(e){
-        e.preventDefault();
-        // Redirect doesn't load node api - is it viewing history ?
-        //this.setState({ redirect_login_facebook: true });
-        // This works - bypass history I suppose
-        window.location = '/api/users/facebook';
-    }
     onForgotPassword(e){
         e.preventDefault();
         this.isValidEmail()
@@ -131,54 +123,45 @@ class LoginForm extends React.Component {
             )
         }
         return (
-            <div className="row">
+            <form>
 
-                <form>
+                <h1>Login!</h1>
 
-                    <h1>Login!</h1>
+                { success.form && <div className="alert alert-success">{success.form}</div>}
+                { errors.form && <div className="alert alert-danger">{errors.form}</div>}
 
-                    { success.form && <div className="alert alert-success">{success.form}</div>}
-                    { errors.form && <div className="alert alert-danger">{errors.form}</div>}
+                <InputField
+                    field="email"
+                    value={this.state.email}
+                    type="text"
+                    label="Email"
+                    onChange={this.onChange}
+                    onBlur={this.onBlurEmail}
+                    error={errors.email}
+                />
 
-                    <InputField
-                        field="email"
-                        value={this.state.email}
-                        type="text"
-                        label="Email"
-                        onChange={this.onChange}
-                        onBlur={this.onBlurEmail}
-                        error={errors.email}
-                    />
+                <InputField
+                    field="password"
+                    value={this.state.password}
+                    type="password"
+                    label="Password"
+                    onChange={this.onChange}
+                    error={errors.password}
+                />
 
-                    <InputField
-                        field="password"
-                        value={this.state.password}
-                        type="password"
-                        label="Password"
-                        onChange={this.onChange}
-                        error={errors.password}
-                    />
+                <div className="form-group">
+                    <button disabled={this.state.isLoading} onClick={this.onSubmit} className="btn btn-primary btn-block btn-lg">
+                        Log In
+                    </button>
+                </div>
 
-                    <div className="form-group">
-                        <button disabled={this.state.isLoading} onClick={this.onSubmit} className="btn btn-primary btn-block btn-lg">
-                            Log In
-                        </button>
-                    </div>
+                <div className="form-group">
+                    <button disabled={this.state.isLoading} onClick={this.onForgotPassword} className="btn btn-info btn-block btn-lg">
+                        Forgot Password
+                    </button>
+                </div>
 
-                    <div className="form-group">
-                        <button disabled={this.state.isLoading} onClick={this.onForgotPassword} className="btn btn-info btn-block btn-lg">
-                            Forgot Password
-                        </button>
-                    </div>
-
-                    <div className="form-group">
-                        <button disabled={this.state.isLoading} onClick={this.onLoginFacebook} className="btn btn-outline-primary btn-block btn-lg">
-                            Log in with Facebook
-                        </button>
-                    </div>
-
-                </form>
-            </div>
+            </form>
         );
     }
 }
