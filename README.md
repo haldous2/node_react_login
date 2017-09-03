@@ -7,6 +7,7 @@ You can find the most recent version of this guide [here](https://github.com/fac
 
 - [Live Demo](#live-demo)
 - [Nginx Dev and Production Virtual Config](#nginx-configs)
+- [Database Configuration](#database-configs)
 - [Facebook Authentication](#facebook-authentications)
 - [Updating to New Releases](#updating-to-new-releases)
 - [Sending Feedback](#sending-feedback)
@@ -173,7 +174,7 @@ created_at (datetime)
 updated_at (datetime)
 ```
 
-## Facebook Configs
+## Facebook Authentications
 
 Originally I had added Facebook authentication using Passport. The trouble is with login patterns
 and how to handle duplicate accounts. There are multiple ways to handle said duplications; however, I've decided to keep this build simple. If you'd like to add the Facebook auth parts add the following to the users route and also a link from the loginForm component.
