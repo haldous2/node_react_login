@@ -309,7 +309,7 @@ router.get(
             fb_access_token: req.user.fb_access_token,
             fb_refresh_token: req.user.fb_refresh_token
         }
-        let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
+        let token = jwt.sign(payload, config.jwtSecret, { expiresIn: '24h' });
         res.redirect("/login?token=" + token);
     },
     function (err, req, res, next) {
