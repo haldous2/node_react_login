@@ -182,10 +182,11 @@ and how to handle duplicate accounts. There are multiple ways to handle said dup
 Note: you need to npm install passport, passport-facebook
 
 You'll also need to initialize passport in your component
-
-  const passport = require("passport");
-  const passportFacebook = require('passport-facebook');
-  router.use(passport.initialize());
+```
+const passport = require("passport");
+const passportFacebook = require('passport-facebook');
+router.use(passport.initialize());
+```
 
 ** Routes @ /server/routes/users
 ```
