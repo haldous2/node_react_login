@@ -7,6 +7,7 @@ You can find the most recent version of this guide [here](https://github.com/fac
 
 - [Live Demo](#live-demo)
 - [Nginx Dev and Production Virtual Config](#nginx-configs)
+- [Facebook Authentication](#facebook-authentications)
 - [Updating to New Releases](#updating-to-new-releases)
 - [Sending Feedback](#sending-feedback)
 - [Folder Structure](#folder-structure)
@@ -155,6 +156,232 @@ server {
 		proxy_cache_bypass $http_upgrade;
 	}
 }
+```
+
+## Database Configs
+```
+// Database thus far
+id (int)
+fb_id (int)
+email (varchar 255)
+status (enum 'Active', 'Disabled')
+password_digest (varchar 255)
+password_update_key (char 12)
+first_name (varchar 255)
+last_name (varchar 255)
+created_at (datetime)
+updated_at (datetime)
+```
+
+## Facebook Configs
+
+Originally I had added Facebook authentication using Passport. The trouble is with login patterns
+and how to handle duplicate accounts. There are multiple ways to handle said duplications; however, I've decided to keep this build simple. If you'd like to add the Facebook auth parts add the following to the users route and also a link from the loginForm component.
+
+** Routes @ /server/routes/users
+```
+/*
+ Removed: profileFields: ['id', 'birthday', 'email', 'first_name', 'last_name']
+ Note: basic profile returned **no scope, profileFields
+       Not alot shared.. just displayName and id
+       user: {
+            id: '0000000000',
+            username: undefined,
+            displayName: 'John Doe',
+            name: {
+                 familyName: undefined,
+                 givenName: undefined,
+                 middleName: undefined },
+            gender: undefined,
+            profileUrl: undefined,
+            provider: 'facebook',
+            _raw: '{"name":"John Doe","id":"0000000000"}',
+            _json: { name: 'John Doe', id: '0000000000' }
+        }
+*/
+var FacebookStrategy = passportFacebook.Strategy;
+passport.use(
+    new FacebookStrategy(
+        {
+            clientID: config.fb_app_id,
+            clientSecret: config.fb_app_secret,
+            callbackURL: "/api/users/facebook/callback",
+            profileFields: ['email', 'first_name', 'last_name']
+        },
+        function(accessToken, refreshToken, profile, next) {
+
+            // facebook returned vars
+            let { id, email, first_name, last_name } = profile._json;
+            let fb_id = id;
+
+            // in case something comes back undefined - string it up
+            if (email === undefined){ email = ''; }
+            if (first_name === undefined){ first_name = ''; }
+            if (last_name === undefined){ last_name = ''; }
+
+            let tAccessToken = '';
+            if (accessToken){ tAccessToken = accessToken; }
+            let tRefreshToken = '';
+            if (refreshToken){ tRefreshToken = refreshToken; }
+
+            // query to keep duplicates from happening in users
+            // note: always get back fb_id,
+            //       email from fb is optional (user might have logged in with phone #)
+            let query = {};
+            if (email){
+                query = { where: {fb_id: fb_id}, orWhere: {email: email} }
+            }else{
+                query = { where: {fb_id: fb_id} }
+            }
+
+            User
+            .query(query)
+            .fetch()
+            .then(
+                user => {
+                    if (user){
+
+                        /*
+                         Update user
+                         fb_id or email were a match
+                        */
+                        console.log(user)
+
+                        // Prefer local user data. If not user data try updating from fb
+                        let tEmail = '';
+                        if (user.attributes.email){
+                            tEmail = user.email;
+                        }else{
+                            tEmail = email;
+                        }
+                        let tFirstName = '';
+                        if (user.attributes.first_name){
+                            tFirstName = user.first_name;
+                        }else{
+                            tFirstName = first_name;
+                        }
+                        let tLastName = '';
+                        if (user.attributes.last_name){
+                            tLastName = user.last_name;
+                        }else{
+                            tLastName = last_name;
+                        }
+
+                        User
+                        .forge({
+                            id: user.id,
+                            fb_id: parseInt(fb_id),
+                            email: tEmail,
+                            first_name: tFirstName,
+                            last_name: tLastName
+                        })
+                        .save()
+                        .then(user => {
+                            let db_user = {
+                                id: user.id,
+                                fb_id: parseInt(fb_id),
+                                email: tEmail,
+                                fb_access_token: tAccessToken,
+                                fb_refresh_token: tRefreshToken
+                            }
+                            return next(null, db_user);
+                        });
+
+                    }else{
+
+                        /*
+                         New User!
+                         no fb_id or email match
+                        */
+
+                        // Generate a new password for this user
+                        const password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
+                        const password_digest = bcrypt.hashSync(password, 10);
+
+                        User
+                        .forge({
+                            fb_id: parseInt(fb_id),
+                            email: email,
+                            password_digest: password_digest,
+                            first_name: first_name,
+                            last_name: last_name
+                        })
+                        .save()
+                        .then(user => {
+                            let db_user = {
+                                id: user.id,
+                                fb_id: parseInt(fb_id),
+                                email: email,
+                                fb_access_token: tAccessToken,
+                                fb_refresh_token: tRefreshToken
+                            }
+                            return next(null, db_user);
+                        });
+                    }
+                }
+            );
+        }
+    )
+);
+/*
+ Facebook login routes
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ Note: additional scope 'permissions' causes the fb redirect to force user to click 'allow'
+       info: https://developers.facebook.com/docs/facebook-login/permissions
+       otherwise it just passed the fb id back with no user interaction
+
+ Note: user_birthday requires additional approval from facebook via the sdk
+
+ Note: To capture errors from fb api via strategy
+       use two overloaded functions to capture errors and user info
+
+ Note: On callback in config for 'failureRedirect' - called when user cancels request
+
+ Note: new kink - fighting cors - doesn't appear that callback can be async
+*/
+router.get(
+    '/facebook',
+    passport.authenticate(
+        'facebook',
+        { session: false, scope: ['email'] }
+    )
+);
+router.get(
+    '/facebook/callback',
+    passport.authenticate(
+        'facebook',
+        { session: false, failureRedirect: '/login' }
+    ),
+    function (req, res, next){
+        let payload = {
+            id: req.user.id,
+            fb_id: req.user.fb_id,
+            email: req.user.email,
+            fb_access_token: req.user.fb_access_token,
+            fb_refresh_token: req.user.fb_refresh_token
+        }
+        let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
+        res.redirect("/login?token=" + token);
+    },
+    function (err, req, res, next) {
+        res.redirect("/login");
+    }
+);
+```
+
+** Link @ /src/components/loginForm
+```
+onLoginFacebook(e){
+    e.preventDefault();
+    window.location = '/api/users/facebook';
+}
+
+<div className="form-group">
+    <button disabled={this.state.isLoading} onClick={this.onLoginFacebook} className="btn btn-outline-primary btn-block btn-lg">
+        Log in with Facebook
+    </button>
+</div>
 ```
 
 ## Updating to New Releases
