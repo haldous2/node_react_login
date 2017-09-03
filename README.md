@@ -182,23 +182,7 @@ and how to handle duplicate accounts. There are multiple ways to handle said dup
 ** Routes @ /server/routes/users
 ```
 /*
- Removed: profileFields: ['id', 'birthday', 'email', 'first_name', 'last_name']
- Note: basic profile returned **no scope, profileFields
-       Not alot shared.. just displayName and id
-       user: {
-            id: '0000000000',
-            username: undefined,
-            displayName: 'John Doe',
-            name: {
-                 familyName: undefined,
-                 givenName: undefined,
-                 middleName: undefined },
-            gender: undefined,
-            profileUrl: undefined,
-            provider: 'facebook',
-            _raw: '{"name":"John Doe","id":"0000000000"}',
-            _json: { name: 'John Doe', id: '0000000000' }
-        }
+ Strategy for Passport
 */
 var FacebookStrategy = passportFacebook.Strategy;
 passport.use(
@@ -215,25 +199,9 @@ passport.use(
             let { id, email, first_name, last_name } = profile._json;
             let fb_id = id;
 
-            // in case something comes back undefined - string it up
-            if (email === undefined){ email = ''; }
-            if (first_name === undefined){ first_name = ''; }
-            if (last_name === undefined){ last_name = ''; }
-
-            let tAccessToken = '';
-            if (accessToken){ tAccessToken = accessToken; }
-            let tRefreshToken = '';
-            if (refreshToken){ tRefreshToken = refreshToken; }
-
-            // query to keep duplicates from happening in users
-            // note: always get back fb_id,
-            //       email from fb is optional (user might have logged in with phone #)
-            let query = {};
-            if (email){
-                query = { where: {fb_id: fb_id}, orWhere: {email: email} }
-            }else{
-                query = { where: {fb_id: fb_id} }
-            }
+            // This is where things get fun - in order to avoid dups,
+            // query and add/update however you like!
+            query = { where: {fb_id: fb_id} }
 
             User
             .query(query)
@@ -241,40 +209,16 @@ passport.use(
             .then(
                 user => {
                     if (user){
-
                         /*
                          Update user
-                         fb_id or email were a match
                         */
-                        console.log(user)
-
-                        // Prefer local user data. If not user data try updating from fb
-                        let tEmail = '';
-                        if (user.attributes.email){
-                            tEmail = user.email;
-                        }else{
-                            tEmail = email;
-                        }
-                        let tFirstName = '';
-                        if (user.attributes.first_name){
-                            tFirstName = user.first_name;
-                        }else{
-                            tFirstName = first_name;
-                        }
-                        let tLastName = '';
-                        if (user.attributes.last_name){
-                            tLastName = user.last_name;
-                        }else{
-                            tLastName = last_name;
-                        }
-
                         User
                         .forge({
                             id: user.id,
                             fb_id: parseInt(fb_id),
-                            email: tEmail,
-                            first_name: tFirstName,
-                            last_name: tLastName
+                            email: email,
+                            first_name: first_name,
+                            last_name: last_name
                         })
                         .save()
                         .then(user => {
@@ -287,18 +231,14 @@ passport.use(
                             }
                             return next(null, db_user);
                         });
-
                     }else{
-
                         /*
                          New User!
                          no fb_id or email match
                         */
-
                         // Generate a new password for this user
                         const password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
                         const password_digest = bcrypt.hashSync(password, 10);
-
                         User
                         .forge({
                             fb_id: parseInt(fb_id),
@@ -338,8 +278,6 @@ passport.use(
        use two overloaded functions to capture errors and user info
 
  Note: On callback in config for 'failureRedirect' - called when user cancels request
-
- Note: new kink - fighting cors - doesn't appear that callback can be async
 */
 router.get(
     '/facebook',
