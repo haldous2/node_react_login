@@ -179,6 +179,14 @@ updated_at (datetime)
 Originally I had added Facebook authentication using Passport. The trouble is with login patterns
 and how to handle duplicate accounts. There are multiple ways to handle said duplications; however, I've decided to keep this build simple. If you'd like to add the Facebook auth parts do so by adding the following to the users route and also a link in the loginForm component.
 
+Note: you need to npm install passport, passport-facebook
+
+You'll also need to initialize passport in your component
+
+  const passport = require("passport");
+  const passportFacebook = require('passport-facebook');
+  router.use(passport.initialize());
+
 ** Routes @ /server/routes/users
 ```
 /*

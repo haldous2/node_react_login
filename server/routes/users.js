@@ -5,7 +5,6 @@ const bcrypt = require('bcrypt');
 const config = require('../config');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const { isEmptyObj } = require('../../src/utilities/helper');
 
 let router = express.Router();
 
@@ -15,201 +14,9 @@ let router = express.Router();
 const transporter = require('../mailer');
 
 /*
- Custome middleware stuff
- Note: use this or passport jwt
+ Custom middleware stuff - protecting server routes
 */
 const authenticate = require('../middleware/authenticate');
-
-/*
- Passport middleware stuff
-*/
-const passport = require("passport");
-const passportJWT = require("passport-jwt");
-const passportFacebook = require('passport-facebook');
-
-router.use(passport.initialize());
-
-var ExtractJwt = passportJWT.ExtractJwt;
-var JwtStrategy = passportJWT.Strategy;
-var jwtOptions = {}
-jwtOptions.jwtFromRequest = ExtractJwt.fromAuthHeader();
-jwtOptions.secretOrKey = config.jwtSecret;
-passport.use(
-    new JwtStrategy(
-        jwtOptions, function(jwt_payload, next) {
-            // **optional - Lookup user - fall back to verify user exists and isn't blacklisted
-            User.query({
-                where: { id: jwt_payload.id }
-            }).fetch().then(user => {
-                if (user){
-                    const { id, email, first_name, last_name } = user.attributes;
-                    const objUser = { id: id,
-                                      email: email
-                                    };
-                    next('message', objUser);
-                }else{
-                    next(null, false);
-                }
-            });
-        }
-    )
-);
-
-/*
- Removed: profileFields: ['id', 'birthday', 'email', 'first_name', 'last_name']
- Note: basic profile returned **no scope, profileFields
-       Not alot shared.. just displayName and id
-       user: {
-            id: '0000000000',
-            username: undefined,
-            displayName: 'John Doe',
-            name: {
-                 familyName: undefined,
-                 givenName: undefined,
-                 middleName: undefined },
-            gender: undefined,
-            profileUrl: undefined,
-            provider: 'facebook',
-            _raw: '{"name":"John Doe","id":"0000000000"}',
-            _json: { name: 'John Doe', id: '0000000000' }
-        }
-*/
-var FacebookStrategy = passportFacebook.Strategy;
-passport.use(
-    new FacebookStrategy(
-        {
-            clientID: config.fb_app_id,
-            clientSecret: config.fb_app_secret,
-            callbackURL: "/api/users/facebook/callback",
-            profileFields: ['email', 'first_name', 'last_name']
-        },
-        function(accessToken, refreshToken, profile, next) {
-
-            // facebook returned vars
-            let { id, email, first_name, last_name } = profile._json;
-            let fb_id = id;
-
-            // in case something comes back undefined - string it up
-            if (email === undefined){ email = ''; }
-            if (first_name === undefined){ first_name = ''; }
-            if (last_name === undefined){ last_name = ''; }
-
-            let tAccessToken = '';
-            if (accessToken){ tAccessToken = accessToken; }
-            let tRefreshToken = '';
-            if (refreshToken){ tRefreshToken = refreshToken; }
-
-            // query to keep duplicates from happening in users
-            // note: always get back fb_id,
-            //       email from fb is optional (user might have logged in with phone #)
-            let query = {};
-            if (email){
-                query = { where: {fb_id: fb_id}, orWhere: {email: email} }
-            }else{
-                query = { where: {fb_id: fb_id} }
-            }
-
-            User
-            .query(query)
-            .fetch()
-            .then(
-                user => {
-                    if (user){
-
-                        /*
-                         Update user
-                         fb_id or email were a match
-                        */
-                        console.log(user)
-
-                        // Prefer local user data. If not user data try updating from fb
-                        let tEmail = '';
-                        if (user.attributes.email){
-                            tEmail = user.email;
-                        }else{
-                            tEmail = email;
-                        }
-                        let tFirstName = '';
-                        if (user.attributes.first_name){
-                            tFirstName = user.first_name;
-                        }else{
-                            tFirstName = first_name;
-                        }
-                        let tLastName = '';
-                        if (user.attributes.last_name){
-                            tLastName = user.last_name;
-                        }else{
-                            tLastName = last_name;
-                        }
-
-                        User
-                        // Save by where() then save()
-                        // .forge()
-                        // .where({ id: user.id })
-                        // .save({
-                        //     fb_id: fb_id,
-                        //     email: tEmail,
-                        //     first_name: tFirstName,
-                        //     last_name: tLastName
-                        // })
-                        // OR.. Save by forge() directly
-                        //      bookshelf looks at id and either inserts or updates record
-                        //      or by whatever key is setup in model as index key, default is id
-                        .forge({
-                            id: user.id,
-                            fb_id: parseInt(fb_id),
-                            email: tEmail,
-                            first_name: tFirstName,
-                            last_name: tLastName
-                        })
-                        .save()
-                        .then(user => {
-                            let db_user = {
-                                id: user.id,
-                                fb_id: parseInt(fb_id),
-                                email: tEmail,
-                                fb_access_token: tAccessToken,
-                                fb_refresh_token: tRefreshToken
-                            }
-                            return next(null, db_user);
-                        });
-
-                    }else{
-
-                        /*
-                         New User!
-                         no fb_id or email match
-                        */
-
-                        // Generate a new password for this user
-                        const password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
-                        const password_digest = bcrypt.hashSync(password, 10);
-
-                        User
-                        .forge({
-                            fb_id: parseInt(fb_id),
-                            email: email,
-                            password_digest: password_digest,
-                            first_name: first_name,
-                            last_name: last_name
-                        })
-                        .save()
-                        .then(user => {
-                            let db_user = {
-                                id: user.id,
-                                fb_id: parseInt(fb_id),
-                                email: email,
-                                fb_access_token: tAccessToken,
-                                fb_refresh_token: tRefreshToken
-                            }
-                            return next(null, db_user);
-                        });
-                    }
-                }
-            );
-        }
-    )
-);
 
 /*
  Authorize token
@@ -253,7 +60,7 @@ router.post('/token', function(req, res) {
 });
 
 /*
- Authorize user a.k.a. login via Passport
+ Authorize user a.k.a. login
  Note: validator crashes if email not sent (not a string error)
        therefore loading each variable succintly in order to avoid the error
  ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -281,7 +88,7 @@ router.post('/login', function(req, res) {
                             fb_access_token: '',
                             fb_refresh_token: ''
                         }
-                        let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
+                        let token = jwt.sign(payload, config.jwtSecret, { expiresIn: '24h' });
                         res.status(200).send(token);
                     }else{
                         res.status(401).send();
@@ -327,7 +134,7 @@ function sendForgotLink(user){
         email: email,
         password_update_key: password_update_key
     }
-    let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
+    let token = jwt.sign(payload, config.jwtSecret, { expiresIn: '24h' });
 
     // message setup
     let mailOptions = {
@@ -490,68 +297,10 @@ router.post('/forgot/password', function(req, res) {
 });
 
 /*
- Facebook login routes
- ////////////////////////////////////////////////////////////////////////////////////////////////////
-
- Note: additional scope 'permissions' causes the fb redirect to force user to click 'allow'
-       info: https://developers.facebook.com/docs/facebook-login/permissions
-       otherwise it just passed the fb id back with no user interaction
-
- Note: user_birthday requires additional approval from facebook via the sdk
-
- Note: To capture errors from fb api via strategy
-       use two overloaded functions to capture errors and user info
-
- Note: On callback in config for 'failureRedirect' - called when user cancels request
-
- Note: new kink - fighting cors - doesn't appear that callback can be async
-*/
-router.get(
-    '/facebook',
-    passport.authenticate(
-        'facebook',
-        { session: false, scope: ['email'] }
-    )
-);
-router.get(
-    '/facebook/callback',
-    passport.authenticate(
-        'facebook',
-        { session: false, failureRedirect: '/login' }
-    ),
-    function (req, res, next){
-        let payload = {
-            id: req.user.id,
-            fb_id: req.user.fb_id,
-            email: req.user.email,
-            fb_access_token: req.user.fb_access_token,
-            fb_refresh_token: req.user.fb_refresh_token
-        }
-        let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: '24h' });
-        res.redirect("/login?token=" + token);
-    },
-    function (err, req, res, next) {
-        res.redirect("/login");
-    }
-);
-
-/*
  Route authentication middleware via passport
  ////////////////////////////////////////////////////////////////////////////////////////////////////
- /secret - passport using jwt
  /secret_auth - custom authentication middleware
 */
-router.get(
-    "/secret",
-    passport.authenticate(
-        'jwt',
-        { session: false }
-    ),
-    function(req, res){
-        let { id, email, first_name, last_name } = req.user;
-        res.status(200).json({ success: 'Success! You can not see this without a token user:' + id + ' ' + email });
-    }
-);
 router.get('/secret_auth_custom', authenticate, function(req, res){
     res.status(200).json({ success: 'JWT verified by custom middleware' });
 });
