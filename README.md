@@ -177,7 +177,7 @@ updated_at (datetime)
 ## Facebook Authentications
 
 Originally I had added Facebook authentication using Passport. The trouble is with login patterns
-and how to handle duplicate accounts. There are multiple ways to handle said duplications; however, I've decided to keep this build simple. If you'd like to add the Facebook auth parts add the following to the users route and also a link from the loginForm component.
+and how to handle duplicate accounts. There are multiple ways to handle said duplications; however, I've decided to keep this build simple. If you'd like to add the Facebook auth parts do so by adding the following to the users route and also a link in the loginForm component.
 
 ** Routes @ /server/routes/users
 ```
@@ -201,6 +201,7 @@ passport.use(
 
             // This is where things get fun - in order to avoid dups,
             // query and add/update however you like!
+
             query = { where: {fb_id: fb_id} }
 
             User
@@ -234,7 +235,6 @@ passport.use(
                     }else{
                         /*
                          New User!
-                         no fb_id or email match
                         */
                         // Generate a new password for this user
                         const password = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(-12);
