@@ -6,7 +6,7 @@ import {
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { validateInput } from '../validations/auth';
+import { validateCredentials } from '../validations/auth';
 import InputField from '../components/shared/InputField';
 
 import { userSignupRequest } from '../actions/signupActions';
@@ -37,8 +37,8 @@ class SignUpForm extends React.Component {
         // this.setState({ username: e.target.value });
         this.setState({ [e.target.name]: e.target.value });
     }
-    isValidInput(){
-        const { errors, isValid } = validateInput(this.state);
+    isValidCredentials(){
+        const { errors, isValid } = validateCredentials(this.state);
         return new Promise((valid, invalid) => {
             this.setState({ errors });
             return valid(isValid);
@@ -46,7 +46,7 @@ class SignUpForm extends React.Component {
     }
     onSubmit(e){
         e.preventDefault();
-        this.isValidInput()
+        this.isValidCredentials()
         .then(
             isValid => {
                 if (isValid){
@@ -82,7 +82,8 @@ class SignUpForm extends React.Component {
             )
         }
         return (
-            <form onSubmit={this.onSubmit}>
+
+            <form>
 
                 <h1>Join our community!</h1>
 
@@ -123,7 +124,7 @@ class SignUpForm extends React.Component {
                 />
 
                 <div className="form-group">
-                    <button disabled={this.state.isLoading} className="btn btn-primary btn-block btn-lg">
+                    <button disabled={this.state.isLoading} onClick={this.onSubmit} className="btn btn-primary btn-block btn-lg">
                         Sign Up
                     </button>
                 </div>

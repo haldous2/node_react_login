@@ -1,15 +1,11 @@
 
 const express = require('express');
-const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const users = require('./server/routes/users');
 
 let app = express();
 let router = express.Router();
-
-// Temporairly allow CORS requests for development
-app.use(cors());
 
 app.disable('x-powered-by'); // server name block
 

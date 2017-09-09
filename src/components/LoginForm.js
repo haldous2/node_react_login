@@ -4,11 +4,10 @@ import { Redirect } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-//import Validator from 'validator';
-import { validateInput, validateEmail } from '../validations/auth';
+import { validateCredentials, validateEmail } from '../validations/auth';
 import InputField from '../components/shared/InputField';
 
-import { authLogin, authCredentials, forgotPassword } from '../actions/authActions';
+import { authSession, authLogin, initAuthToken, authCredentials, forgotPassword } from '../actions/authActions';
 import { addFlashMessage } from '../actions/flashMessages';
 
 class LoginForm extends React.Component {
@@ -34,11 +33,10 @@ class LoginForm extends React.Component {
         this.onForgotPassword = this.onForgotPassword.bind(this);
     }
     onChange(e){
-        // this.setState({ username: e.target.value });
         this.setState({ [e.target.name]: e.target.value });
     }
-    isValidInput(){
-        const { errors, isValid } = validateInput(this.state);
+    isValidCredentials(){
+        const { errors, isValid } = validateCredentials(this.state);
         return new Promise((valid, invalid) => {
             this.setState({ errors });
             return valid(isValid);
@@ -52,21 +50,27 @@ class LoginForm extends React.Component {
         });
     }
     onSubmit(e){
+        /*
+         Appears to be a bug with autofill + chrome + ios. no work arounds I can find
+        */
         e.preventDefault();
-        this.isValidInput()
+        this.isValidCredentials()
         .then(
             (isValid) => {
                 if (isValid){
                     this.setState({ errors: {}, isLoading: true });
-                    authCredentials(this.state)
+                    authCredentials({ email: this.state.email, password: this.state.password})
                     .then(
                         res => {
-                            this.props.authLogin(res.data);
+                            this.props.authSession(true, {});
+                            authLogin(res.data);
                             this.props.addFlashMessage({
                                 type: 'success',
                                 text: 'You have successfully logged in! Welcome!'
                             });
-                            this.setState({ isLoading: false, errors: { form: ''}, redirect_home: true });
+                            this.setState({
+                                redirect_home: true
+                            });
                         },
                         err => {
                             if (err.response.status === 400){
@@ -115,6 +119,31 @@ class LoginForm extends React.Component {
             }
         );
     }
+    onLoadToken(){
+        const search = this.props.location.search;
+        const params = new URLSearchParams(search);
+        const token = params.get('token');
+        console.log('LoginForm token:', token);
+        initAuthToken(token)
+        .then(
+            res => {
+                if (res === true){
+                    authLogin(token);
+                    this.props.authSession(true, {});
+                    this.props.addFlashMessage({
+                        type: 'success',
+                        text: 'You have successfully logged in! Welcome!'
+                    });
+                    this.setState({
+                        redirect_home: true
+                    });
+                }
+            }
+        )
+    }
+    componentWillMount(){
+        this.onLoadToken();
+    }
     render(){
         const { errors, success, redirect_home } = this.state;
         if (redirect_home) {
@@ -124,23 +153,23 @@ class LoginForm extends React.Component {
         }
         return (
             <form>
-
                 <h1>Login!</h1>
 
                 { success.form && <div className="alert alert-success">{success.form}</div>}
                 { errors.form && <div className="alert alert-danger">{errors.form}</div>}
 
                 <InputField
+                    reference={ input => { this.inputEmail = input }}
                     field="email"
                     value={this.state.email}
-                    type="text"
+                    type="email"
                     label="Email"
                     onChange={this.onChange}
-                    onBlur={this.onBlurEmail}
                     error={errors.email}
                 />
 
                 <InputField
+                    reference={ input => { this.inputPassword = input }}
                     field="password"
                     value={this.state.password}
                     type="password"
@@ -166,7 +195,7 @@ class LoginForm extends React.Component {
     }
 }
 LoginForm.propTypes = {
-    authLogin: PropTypes.func.isRequired,
+    authSession: PropTypes.func.isRequired,
     addFlashMessage: PropTypes.func.isRequired
 }
-export default connect(null, { authLogin, addFlashMessage } )(LoginForm);
+export default connect(null, { authSession, addFlashMessage } )(LoginForm);

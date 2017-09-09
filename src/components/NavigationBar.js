@@ -1,9 +1,8 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { authLogout } from '../actions/authActions'
+import { authSession, authLogout } from '../actions/authActions'
 
 import { Nav, Navbar, NavItem } from 'react-bootstrap';
 
@@ -17,12 +16,13 @@ class NavigationBar extends React.Component {
 
     logout(e){
         e.preventDefault();
-        this.props.authLogout();
+        this.props.authSession(false, {});
+        authLogout();
     }
 
     render(){
 
-        const { isAuthenticated } = this.props.authUser;
+        const { isAuthenticated } = this.props.sessionData;
 
         let link_nav = null;
         if (isAuthenticated === true){
@@ -32,7 +32,8 @@ class NavigationBar extends React.Component {
                 //     <li className="nav-item"><Link to="#" onClick={this.logout}>Logout</Link></li>
                 // </ul>
                 <Nav bsStyle="pills" pullRight activeKey={this.state.activeKey} onSelect={this.handleSelect}>
-                    <NavItem eventKey={1} href="/mysite">My Site (Test Login)</NavItem>
+                    <NavItem eventKey={1} href="/mysite">My Site</NavItem>
+                    <NavItem eventKey={1} href="/myprofile">My Profile</NavItem>
                     <NavItem eventKey={3} href="#" onClick={this.logout}>Logout</NavItem>
                 </Nav>
             );
@@ -63,12 +64,11 @@ class NavigationBar extends React.Component {
     }
 }
 NavigationBar.propTypes = {
-    authUser: PropTypes.object.isRequired,
-    authLogout: PropTypes.func.isRequired
+    authSession: PropTypes.func.isRequired
 }
 function mapStateToProps(state){
     return {
-        authUser: state.authUser
+        sessionData: state.sessionData
     };
 }
-export default connect(mapStateToProps, { authLogout })(NavigationBar);
+export default connect(mapStateToProps, { authSession })(NavigationBar);

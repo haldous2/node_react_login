@@ -46,7 +46,7 @@ export default function(Component){
     }
     function mapStateToProps(state){
         return {
-            isAuthenticated: state.authUser.isAuthenticated
+            isAuthenticated: state.sessionData.isAuthenticated
         }
     }
     return connect(mapStateToProps, { addFlashMessage })(Authenticate);

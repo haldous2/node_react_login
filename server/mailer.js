@@ -3,7 +3,6 @@
 const config = require('./config');
 
 const nodemailer = require('nodemailer');
-let ses = require('nodemailer-ses-transport');
 let aws = require('aws-sdk');
 
 const mail_type = config.mail_type;

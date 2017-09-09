@@ -1,6 +1,7 @@
 
 import axios from 'axios';
 
-export function userSignupRequest(userData){
-    return axios.post('/api/users/signup', userData);
+// New User
+export function userSignupRequest(data){
+    return axios.post('/api/users/signup', data);
 }

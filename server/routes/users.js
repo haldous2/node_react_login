@@ -1,6 +1,6 @@
 
 const express = require('express');
-const { validateInput, validateEmail } = require('../../src/validations/auth');
+const { validateCredentials, validateEmail } = require('../../src/validations/auth');
 const bcrypt = require('bcrypt');
 const config = require('../config');
 const jwt = require('jsonwebtoken');
@@ -19,44 +19,19 @@ const transporter = require('../mailer');
 const authenticate = require('../middleware/authenticate');
 
 /*
+ Return user data
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+*/
+router.post('/getprofile', authenticate, function(req, res) {
+    res.status(200).json(req.myprofile);
+});
+
+/*
  Authorize token
  ////////////////////////////////////////////////////////////////////////////////////////////////////
 */
-router.post('/token', function(req, res) {
-    const { token } = req.body;
-    if (token){
-        jwt.verify(token, config.jwtSecret, (err, decoded) => {
-            if (err){
-                // Token did not validate - expired, didn't verify against secret or just invalid
-                res.status(401).send();
-            }else{
-                User.query({
-                    where: { id: decoded.id }
-                })
-                .fetch()
-                .then(
-                    user => {
-                        if (user){
-                            const { status } = user.attributes;
-                            if (status == "Active"){
-                                // User is active
-                                res.status(200).send();
-                            }else{
-                                // User is not active
-                                res.status(401).send();
-                            }
-                        }else{
-                            // No user found at that id
-                            res.status(401).send();
-                        }
-                    }
-                );
-            }
-        });
-    }else{
-        // Token is required
-        res.status(400).send();
-    }
+router.post('/token', authenticate, function(req, res) {
+    res.status(200).send();
 });
 
 /*
@@ -232,6 +207,7 @@ router.post('/forgot/password', function(req, res) {
     /*
      User entered new password and clicked submit (from React page)
      Verify token, find user and update password
+     Note: this token is specific to updating password, different than login token
     */
 
     let token = req.body.token;
@@ -314,7 +290,7 @@ router.post('/signup', function(req, res) {
 
     const { email, password, first_name, last_name } = req.body;
 
-    const { errors, isValid } = validateInput({ email: email, password: password });
+    const { errors, isValid } = validateCredentials({ email: email, password: password });
     if (isValid){
         User
         .where({ email: email })
@@ -352,6 +328,57 @@ router.post('/signup', function(req, res) {
         // HTTP 400 - Bad Request - email or password screwed up
         res.status(400).send();
     }
+});
+
+/*
+ My Profile
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ update email, password and other profile info
+*/
+router.post('/myemail', authenticate, function(req, res) {
+    const { newemail } = req.body;
+    const { id, password_match } = req.myprofile;
+    if (password_match){
+        const { errors, isValid } = validateEmail({ email: newemail });
+        if (isValid){
+            // Everything is a-ok
+            // Look for dups then update
+            User.query({
+                where: { email: newemail }
+            })
+            .fetch()
+            .then(
+                user => {
+                    if (user){
+                        // 409:Conflict - Email already exists
+                        res.status(409).send()
+                    }else{
+                        // Update the emailz!
+                        User
+                        .forge({ id: id })
+                        .save({ email: newemail })
+                        .then(
+                            user => {
+                                res.status(200).send();
+                            }
+                        );
+                    }
+                }
+            );
+        }else{
+            // 400:Bad Request - Invalid email address
+            res.status(400).send();
+        }
+    }else{
+        // 401:Unauthorized - Invalid password
+        res.status(401).send();
+    }
+});
+router.post('/mypassword', authenticate, function(req, res) {
+    const { newpassword, password_match } = req.body;
+});
+router.post('/myprofile', authenticate, function(req, res) {
+    const { first_name, last_name } = req.body;
 });
 
 module.exports = router;

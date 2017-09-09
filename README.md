@@ -162,8 +162,8 @@ server {
 ## Database Configs
 ```
 // Database thus far
-id (int)
-fb_id (int)
+id (bigint)
+fb_id (bigint)                      # only used if facebook login setup
 email (varchar 255)
 status (enum 'Active', 'Disabled')
 password_digest (varchar 255)
@@ -208,8 +208,13 @@ passport.use(
             let { id, email, first_name, last_name } = profile._json;
             let fb_id = id;
 
-            // This is where things get fun - in order to avoid dups,
-            // query and add/update however you like!
+            /*
+             This is where things get fun - in order to avoid dups,
+             query and add/update however you like!
+             Also note that Facebook doesn't require an email address for
+             signups as you can log in with your phone number. So no guarantee
+             that you'll get an email back to match on.
+            */
 
             query = { where: {fb_id: fb_id} }
 
