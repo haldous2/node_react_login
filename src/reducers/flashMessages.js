@@ -1,6 +1,6 @@
 // Flash Message Reducer
 
-import { ADD_FLASH_MESSAGE, DELETE_FLASH_MESSAGE } from '../actions/types';
+import { ADD_FLASH_MESSAGE, DELETE_FLASH_MESSAGE, DELETE_FLASH_MESSAGES } from '../actions/types';
 import shortid from 'shortid';
 
 // Reducer reacting to action
@@ -29,6 +29,9 @@ export default (state = [], action = {}) => {
                 ];
             }
             return state;
+
+        case DELETE_FLASH_MESSAGES:
+            return [];
 
         default: return state;
     }

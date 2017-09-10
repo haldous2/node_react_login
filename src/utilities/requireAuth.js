@@ -13,7 +13,7 @@ export default function(Component){
                 redirect: false
             };
         }
-        // Lifecycle hook - right before this mounts
+        // Lifecycle hook - called right before render
         componentDidMount(){
             if (this.props.isAuthenticated === false){
                 this.props.addFlashMessage({
@@ -23,9 +23,16 @@ export default function(Component){
                 this.setState({ redirect: true });
             }
         }
-        // Lifecycle hook - right after this mounts
-        componentWillUpdate(nextProps){
+        // Lifecycle hooks - listening for props changes
+        componentWillReceiveProps(nextProps){
+            if (nextProps.isAuthenticated === null){
+                this.setState({ redirect: true });
+            }
             if (nextProps.isAuthenticated === false){
+                nextProps.addFlashMessage({
+                    type: 'error',
+                    text: 'You need to log in'
+                });
                 this.setState({ redirect: true });
             }
         }

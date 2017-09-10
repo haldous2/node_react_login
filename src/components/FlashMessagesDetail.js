@@ -26,5 +26,4 @@ FlashMessagesDetail.propTypes = {
     message: PropTypes.object.isRequired,
     deleteFlashMessage: PropTypes.func.isRequired
 }
-
 export default FlashMessagesDetail;

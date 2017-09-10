@@ -7,7 +7,7 @@ import rootReducer from './rootReducer';
 import requireAuth from './utilities/requireAuth';
 
 import cookie from 'react-cookies';
-import { authLogin, authLogout, setSessionData, initAuthToken } from './actions/authActions';
+import { authLogout, setSessionData, initAuthToken } from './actions/authActions';
 
 import { Grid, Row } from 'react-bootstrap';
 

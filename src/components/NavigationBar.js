@@ -13,18 +13,14 @@ class NavigationBar extends React.Component {
         this.state = {};
         this.logout = this.logout.bind(this);
     }
-
     logout(e){
         e.preventDefault();
-        this.props.authSession(false, {});
+        this.props.authSession(null, {});
         authLogout();
     }
-
-    render(){
-
-        const { isAuthenticated } = this.props.sessionData;
-
-        let link_nav = null;
+    componentWillReceiveProps(nextProps){
+        let link_nav = '';
+        const { isAuthenticated } = nextProps.sessionData;
         if (isAuthenticated === true){
             link_nav = (
                 // <ul className="nav navbar-nav">
@@ -37,8 +33,7 @@ class NavigationBar extends React.Component {
                     <NavItem eventKey={3} href="#" onClick={this.logout}>Logout</NavItem>
                 </Nav>
             );
-        }
-        if (isAuthenticated === false){
+        }else{
             link_nav = (
                 <Nav bsStyle="pills" pullRight activeKey={this.state.activeKey} onSelect={this.handleSelect}>
                     <NavItem eventKey={1} href="/mysite">My Site (Test Login)</NavItem>
@@ -47,7 +42,9 @@ class NavigationBar extends React.Component {
                 </Nav>
             );
         }
-
+        this.setState({ link_nav: link_nav });
+    }
+    render(){
         return (
             <Navbar fluid>
               <Navbar.Header>
@@ -57,7 +54,7 @@ class NavigationBar extends React.Component {
                 <Navbar.Toggle />
               </Navbar.Header>
               <Navbar.Collapse>
-                  { link_nav }
+                  { this.state.link_nav }
               </Navbar.Collapse>
             </Navbar>
         );

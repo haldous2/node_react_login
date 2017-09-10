@@ -123,7 +123,6 @@ class LoginForm extends React.Component {
         const search = this.props.location.search;
         const params = new URLSearchParams(search);
         const token = params.get('token');
-        console.log('LoginForm token:', token);
         initAuthToken(token)
         .then(
             res => {
