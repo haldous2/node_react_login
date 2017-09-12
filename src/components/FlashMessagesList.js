@@ -4,31 +4,30 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import FlashMessagesDetail from './FlashMessagesDetail';
-import { deleteFlashMessage, deleteFlashMessages } from '../actions/flashMessages';
+import { incrementFlashMessage, deleteFlashMessage, deleteFlashMessages } from '../actions/flashMessages';
 
 class FlashMessagesList extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            flash_messages: []
+            flash_messages: [],
+            flash_messages_count: 0
         };
     }
-    shouldComponentUpdate(nextProps, nextState){
-        //console.log('shouldComponentUpdate', nextProps);
-        this.setState({ flash_messages: nextProps.messages });
-        if (nextProps.messages.length > 0){
-            nextProps.deleteFlashMessages();
-            // No update on state change (flash_messages will retain state - balancing plates)
-            return false;
-        }else{
-            // Allow update on state change
-            return true;
+    componentWillReceiveProps(nextProps){
+        if (this.props.messages === nextProps.messages){
+            nextProps.incrementFlashMessage();
         }
     }
     render(){
         const { deleteFlashMessage } = this.props;
-        const messages = this.state.flash_messages.map(message =>
-            <FlashMessagesDetail key={message.id} message={message} deleteFlashMessage={deleteFlashMessage} />
+        //const messages = this.state.flash_messages.map(message =>
+        const messages = this.props.messages.map(message =>
+            <FlashMessagesDetail
+                key={message.id}
+                message={message}
+                deleteFlashMessage={deleteFlashMessage}
+            />
         );
         return(
             <div className='col-md-12' style={{display: (messages.length ? '' : 'none')}}>
@@ -39,6 +38,7 @@ class FlashMessagesList extends React.Component {
 }
 
 FlashMessagesList.propTypes = {
+    incrementFlashMessage: PropTypes.func.isRequired,
     deleteFlashMessage: PropTypes.func.isRequired,
     deleteFlashMessages: PropTypes.func.isRequired
 }
@@ -48,4 +48,4 @@ function mapStateToProps(state) {
         isAuthenticated: state.sessionData.isAuthenticated
     }
 }
-export default connect(mapStateToProps, { deleteFlashMessage, deleteFlashMessages })(FlashMessagesList);
+export default connect(mapStateToProps, { incrementFlashMessage, deleteFlashMessage, deleteFlashMessages })(FlashMessagesList);
