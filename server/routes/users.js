@@ -1,6 +1,6 @@
 
 const express = require('express');
-const { validateCredentials, validateEmail } = require('../../src/validations/auth');
+const { validateCredentials, validateEmail, validatePassword } = require('../../src/validations/auth');
 const bcrypt = require('bcrypt');
 const config = require('../config');
 const jwt = require('jsonwebtoken');
@@ -350,7 +350,7 @@ router.post('/myemail', authenticate, function(req, res) {
             .then(
                 user => {
                     if (user){
-                        // 409:Conflict - Email already exists
+                        // 409:Conflict - Email already exists OR (new email same as current)
                         res.status(409).send()
                     }else{
                         // Update the emailz!
@@ -375,10 +375,44 @@ router.post('/myemail', authenticate, function(req, res) {
     }
 });
 router.post('/mypassword', authenticate, function(req, res) {
-    const { newpassword, password_match } = req.body;
+    const { newpassword } = req.body;
+    const { id, password_match } = req.myprofile;
+    if (password_match){
+        const { errors, isValid } = validatePassword({ password: newpassword });
+        if (isValid){
+            // Update the passwordz!
+            const password_digest = bcrypt.hashSync(newpassword, 10);
+            User
+            .forge({ id: id })
+            .save({ password_digest: password_digest })
+            .then(
+                user => {
+                    res.status(200).send();
+                }
+            );
+        }else{
+            // 400:Bad Request - Invalid new password
+            res.status(400).send();
+        }
+    }else{
+        // 401:Unauthorized - Invalid password
+        res.status(401).send();
+    }
 });
 router.post('/myprofile', authenticate, function(req, res) {
     const { first_name, last_name } = req.body;
+    const { id } = req.myprofile;
+    User
+    .forge({ id: id })
+    .save({
+        first_name: first_name,
+        last_name: last_name
+    })
+    .then(
+        user => {
+            res.status(200).send();
+        }
+    );
 });
 
 module.exports = router;

@@ -8,19 +8,19 @@ export function loadMyProfile(){
 }
 
 // Update email address
-export function userMyEmail(data){
+export function userUpdateEmail(data){
     //return axios.post('/api/users/myemail', data);
     return performRequest('post', '/api/users/myemail', data);
 }
 
 // Update password
-export function userMyPassword(data){
+export function userUpdatePassword(data){
     //return axios.post('/api/users/mypassword', data);
     return performRequest('post', '/api/users/mypassword', data);
 }
 
 // Update profile e.g. first name, last name, birthday, location etc..
-export function userMyProfile(data){
+export function userUpdateProfile(data){
     //return axios.post('/api/users/myprofile', data);
     return performRequest('post', '/api/users/myprofile', data);
 }

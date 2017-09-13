@@ -4,7 +4,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import FlashMessagesDetail from './FlashMessagesDetail';
-import { incrementFlashMessage, deleteFlashMessage, deleteFlashMessages } from '../actions/flashMessages';
+import { incrementFlashMessage, deleteFlashMessage } from '../actions/flashMessages';
 
 class FlashMessagesList extends React.Component {
     constructor(props) {
@@ -39,8 +39,7 @@ class FlashMessagesList extends React.Component {
 
 FlashMessagesList.propTypes = {
     incrementFlashMessage: PropTypes.func.isRequired,
-    deleteFlashMessage: PropTypes.func.isRequired,
-    deleteFlashMessages: PropTypes.func.isRequired
+    deleteFlashMessage: PropTypes.func.isRequired
 }
 function mapStateToProps(state) {
     return {
@@ -48,4 +47,4 @@ function mapStateToProps(state) {
         isAuthenticated: state.sessionData.isAuthenticated
     }
 }
-export default connect(mapStateToProps, { incrementFlashMessage, deleteFlashMessage, deleteFlashMessages })(FlashMessagesList);
+export default connect(mapStateToProps, { incrementFlashMessage, deleteFlashMessage })(FlashMessagesList);

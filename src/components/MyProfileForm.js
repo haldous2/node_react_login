@@ -3,10 +3,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { validateNewEmail } from '../validations/profile';
+import { validateUpdateEmail, validateUpdatePassword, validateUpdateProfile } from '../validations/profile';
 import InputField from '../components/shared/InputField';
 
-import { loadMyProfile, userMyEmail, userMyPassword, userMyProfile } from '../actions/profileActions';
+import { loadMyProfile, userUpdateEmail, userUpdatePassword, userUpdateProfile } from '../actions/profileActions';
 import { addFlashMessage } from '../actions/flashMessages';
 
 class MyProfileForm extends React.Component {
@@ -48,33 +48,52 @@ class MyProfileForm extends React.Component {
             isLoading: false
         }
         this.onChange = this.onChange.bind(this);
-        this.onSubmitEmail = this.onSubmitEmail.bind(this);
-        this.onSubmitPassword = this.onSubmitPassword.bind(this);
-        this.onSubmitProfile = this.onSubmitProfile.bind(this);
+        this.onSubmitUpdateEmail = this.onSubmitUpdateEmail.bind(this);
+        this.onSubmitUpdatePassword = this.onSubmitUpdatePassword.bind(this);
+        this.onSubmitUpdateProfile = this.onSubmitUpdateProfile.bind(this);
     }
     onChange(e){
         this.setState({ [e.target.name]: e.target.value });
     }
-    isValidNewEmail(){
-        const { errors, isValid } = validateNewEmail({ newemail: this.state.myemail_newemail, password: this.state.myemail_password });
+
+    /*
+     Updating email address
+     ----------------------------------------------------------------------
+    */
+    isValidUpdateEmail(){
+        const { errors, isValid } = validateUpdateEmail({
+            email: this.state.email,
+            newemail: this.state.myemail_newemail,
+            password: this.state.myemail_password
+        });
         return new Promise((valid, invalid) => {
             this.setState({ errors });
             return valid(isValid);
         });
     }
-    onSubmitEmail(e){
+    onSubmitUpdateEmail(e){
         e.preventDefault();
-        this.isValidNewEmail()
+        this.isValidUpdateEmail()
         .then(
             isValid => {
                 if (isValid){
                     this.setState({ errors: {}, success: {}, isLoading: true });
-                    userMyEmail({ newemail: this.state.myemail_newemail, password: this.state.myemail_password })
+                    userUpdateEmail({
+                        newemail: this.state.myemail_newemail,
+                        password: this.state.myemail_password
+                    })
                     .then(
                         res => {
                             this.setState({
                                 isLoading: false,
-                                success: { myemail_form: 'Email address updated!' },
+                                errors: {
+                                    myemail_form: '',
+                                    myemail_newemail: '',
+                                    myemail_password: ''
+                                },
+                                success: {
+                                    myemail_form: 'Email address updated!'
+                                },
                                 email: this.state.myemail_newemail,
                                 myemail_newemail: '',
                                 myemail_password: ''
@@ -86,7 +105,12 @@ class MyProfileForm extends React.Component {
                                 this.setState({
                                     isLoading: false,
                                     errors: {
-                                        myemail_newemail: 'Invalid email address'
+                                        myemail_form: '',
+                                        myemail_newemail: 'Invalid email address',
+                                        myemail_password: ''
+                                    },
+                                    success: {
+                                        myemail_form: ''
                                     }
                                 });
                             }
@@ -94,7 +118,12 @@ class MyProfileForm extends React.Component {
                                 this.setState({
                                     isLoading: false,
                                     errors: {
+                                        myemail_form: '',
+                                        myemail_newemail: '',
                                         myemail_password: 'Invalid password'
+                                    },
+                                    success: {
+                                        myemail_form: ''
                                     }
                                 });
                             }
@@ -102,7 +131,12 @@ class MyProfileForm extends React.Component {
                                 this.setState({
                                     isLoading: false,
                                     errors: {
-                                        myemail_newemail: 'Email address already in use'
+                                        myemail_form: '',
+                                        myemail_newemail: 'Email address already in use',
+                                        myemail_password: ''
+                                    },
+                                    success: {
+                                        myemail_form: ''
                                     }
                                 });
                             }
@@ -112,16 +146,145 @@ class MyProfileForm extends React.Component {
             }
         );
     }
-    onSubmitPassword(e){
-        e.preventDefault();
-        userMyPassword()
-        .then();
+
+    /*
+     Updating password
+     ----------------------------------------------------------------------
+    */
+    isValidUpdatePassword(){
+        const { errors, isValid } = validateUpdatePassword({
+            newpassword: this.state.mypassword_newpassword,
+            password: this.state.mypassword_password
+        });
+        return new Promise((valid, invalid) => {
+            this.setState({ errors });
+            return valid(isValid);
+        });
     }
-    onSubmitProfile(e){
+    onSubmitUpdatePassword(e){
         e.preventDefault();
-        userMyProfile()
-        .then();
+        this.isValidUpdatePassword()
+        .then(
+            isValid => {
+                if (isValid){
+                    userUpdatePassword({
+                        newpassword: this.state.mypassword_newpassword,
+                        password: this.state.mypassword_password
+                    })
+                    .then(
+                        res => {
+                            this.setState({
+                                isLoading: false,
+                                errors: {
+                                    mypassword_form: '',
+                                    mypassword_password: '',
+                                    mypassword_newpassword: ''
+                                },
+                                success: {
+                                    mypassword_form: 'Password updated!'
+                                },
+                                mypassword_newpassword: '',
+                                mypassword_password: ''
+                            });
+                        },
+                        err => {
+                            if (err.response.status === 400){
+                                // This shouldn't happen - just in case!
+                                this.setState({
+                                    isLoading: false,
+                                    errors: {
+                                        mypassword_form: '',
+                                        mypassword_password: '',
+                                        mypassword_newpassword: 'Invalid password'
+                                    },
+                                    success: {
+                                        myprofile_form: ''
+                                    }
+                                });
+                            }
+                            if (err.response.status === 401){
+                                this.setState({
+                                    isLoading: false,
+                                    errors: {
+                                        mypassword_form: '',
+                                        mypassword_password: 'Invalid password',
+                                        mypassword_newpassword: ''
+                                    },
+                                    success: {
+                                        myprofile_form: ''
+                                    }
+                                });
+                            }
+                        }
+                    );
+                }
+            }
+        );
     }
+
+    /*
+     Updating my profile
+     ----------------------------------------------------------------------
+    */
+    isValidUpdateProfile(){
+        const { errors, isValid } = validateUpdateProfile({
+            first_name: this.state.myprofile_first_name,
+            last_name: this.state.myprofile_last_name
+        });
+        return new Promise((valid, invalid) => {
+            this.setState({ errors });
+            return valid(isValid);
+        });
+    }
+    onSubmitUpdateProfile(e){
+        e.preventDefault();
+        this.isValidUpdateProfile()
+        .then(
+            isValid => {
+                if (isValid){
+                    userUpdateProfile({
+                        first_name: this.state.myprofile_first_name,
+                        last_name: this.state.myprofile_last_name
+                    })
+                    .then(
+                        res => {
+                            this.setState({
+                                isLoading: false,
+                                errors: {
+                                    myprofile_first_name: '',
+                                    myprofile_last_name: '',
+                                    myprofile_form: ''
+                                },
+                                success: {
+                                    myprofile_form: 'Profile updated!'
+                                }
+                            });
+                        },
+                        err => {
+                            if (err.response.status === 401){
+                                this.setState({
+                                    isLoading: false,
+                                    errors: {
+                                        myprofile_first_name: '',
+                                        myprofile_last_name: '',
+                                        mypassword_form: 'Something bad happened'
+                                    },
+                                    success: {
+                                        myprofile_form: ''
+                                    }
+                                });
+                            }
+                        }
+                    );
+                }
+            }
+        );
+    }
+
+    /*
+     Load user data
+     ----------------------------------------------------------------------
+    */
     componentDidMount(){
         loadMyProfile()
         .then(
@@ -138,6 +301,7 @@ class MyProfileForm extends React.Component {
             }
         );
     }
+
     render(){
         const { errors, success } = this.state;
         return (
@@ -160,7 +324,7 @@ class MyProfileForm extends React.Component {
                         field="myemail_newemail"
                         value={this.state.myemail_newemail}
                         type="email"
-                        label="New Email"
+                        label="Update Email"
                         onChange={this.onChange}
                         error={errors.myemail_newemail}
                     />
@@ -175,7 +339,7 @@ class MyProfileForm extends React.Component {
                     />
 
                     <div className="form-group">
-                        <button disabled={this.state.isLoading} onClick={this.onSubmitEmail} className="btn btn-primary btn-block btn-lg">
+                        <button disabled={this.state.isLoading} onClick={this.onSubmitUpdateEmail} className="btn btn-primary btn-block btn-lg">
                             Update Email
                         </button>
                     </div>
@@ -186,11 +350,14 @@ class MyProfileForm extends React.Component {
 
                     <h2>My Password</h2>
 
+                    { success.mypassword_form && <div className="alert alert-success">{success.mypassword_form}</div>}
+                    { errors.mypassword_form && <div className="alert alert-danger">{errors.mypassword_form}</div>}
+
                     <InputField
                         field="mypassword_newpassword"
                         value={this.state.mypassword_newpassword}
                         type="password"
-                        label="New Password"
+                        label="Update Password"
                         onChange={this.onChange}
                         error={errors.mypassword_newpassword}
                     />
@@ -205,7 +372,7 @@ class MyProfileForm extends React.Component {
                     />
 
                     <div className="form-group">
-                        <button disabled={this.state.isLoading} onClick={this.onSubmitPassword} className="btn btn-primary btn-block btn-lg">
+                        <button disabled={this.state.isLoading} onClick={this.onSubmitUpdatePassword} className="btn btn-primary btn-block btn-lg">
                             Update Password
                         </button>
                     </div>
@@ -215,6 +382,9 @@ class MyProfileForm extends React.Component {
                 <form>
 
                     <h2>My Profile</h2>
+
+                    { success.myprofile_form && <div className="alert alert-success">{success.myprofile_form}</div>}
+                    { errors.myprofile_form && <div className="alert alert-danger">{errors.myprofile_form}</div>}
 
                     <InputField
                         field="myprofile_first_name"
@@ -235,7 +405,7 @@ class MyProfileForm extends React.Component {
                     />
 
                     <div className="form-group">
-                        <button disabled={this.state.isLoading} onClick={this.onSubmitProfile} className="btn btn-primary btn-block btn-lg">
+                        <button disabled={this.state.isLoading} onClick={this.onSubmitUpdateProfile} className="btn btn-primary btn-block btn-lg">
                             Update Profile
                         </button>
                     </div>

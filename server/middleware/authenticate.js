@@ -50,7 +50,7 @@ module.exports = function(req, res, next){
         jwt.verify(token, config.jwtSecret, (err, decoded) => {
             if (err){
                 // token error
-                //console.log('middleware.authenticate: token error:', err);
+                console.log('middleware.authenticate: token error:', err);
                 res.status(401).send();
             }else{
                 User.query({
@@ -89,12 +89,12 @@ module.exports = function(req, res, next){
                                 next();
                             }else{
                                 // Status not Active
-                                //console.log('middleware.authenticate: user.status Inactive');
+                                console.log('middleware.authenticate: user.status Inactive');
                                 res.status(401).send();
                             }
                         }else{
                             // User not found
-                            //console.log('middleware.authenticate: User not found');
+                            console.log('middleware.authenticate: User not found');
                             res.status(401).send();
                         }
                     }
@@ -103,7 +103,7 @@ module.exports = function(req, res, next){
         });
     }else{
         // missing token
-        //console.log('middleware.authenticate: Missing token');
+        console.log('middleware.authenticate: Missing token');
         res.status(401).send();
     }
 }
