@@ -11,6 +11,7 @@ import { authSession, authLogin, initAuthToken, authCredentials, forgotPassword 
 import { addFlashMessage } from '../actions/flashMessages';
 
 class LoginForm extends React.Component {
+
     constructor(props){
         super(props);
         this.state = {
@@ -27,13 +28,13 @@ class LoginForm extends React.Component {
             redirect_home: false,
             isLoading: false
         }
-        /* either bind onChange here or for onClick in input element -- in constructor preferred */
-        this.onChange = this.onChange.bind(this);
+        this.onInput = this.onInput.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
         this.onForgotPassword = this.onForgotPassword.bind(this);
     }
-    onChange(e){
-        this.setState({ [e.target.name]: e.target.value });
+    onInput(e){
+        const { name, value } = e.target;
+        this.setState({ [name]: value });
     }
     isValidCredentials(){
         const { errors, isValid } = validateCredentials(this.state);
@@ -50,74 +51,85 @@ class LoginForm extends React.Component {
         });
     }
     onSubmit(e){
-        /*
-         Appears to be a bug with autofill + chrome + ios. no work arounds I can find
-        */
         e.preventDefault();
-        this.isValidCredentials()
-        .then(
-            (isValid) => {
-                if (isValid){
-                    this.setState({ errors: {}, isLoading: true });
-                    authCredentials({ email: this.state.email, password: this.state.password})
-                    .then(
-                        res => {
-                            this.props.authSession(true, {});
-                            authLogin(res.data);
-                            this.props.addFlashMessage({
-                                type: 'success',
-                                text: 'You have successfully logged in! Welcome!'
-                            });
-                            this.setState({
-                                redirect_home: true
-                            });
-                        },
-                        err => {
-                            if (err.response.status === 400){
-                                // This shouldn't happen
-                                this.setState({ isLoading: false, errors: { form: 'Invalid Input'} });
+
+        /*
+         Appears to be a bug with autofill + chrome + ios. (maybe more? haven't tested...)
+         work-around - set state onSubmit since onChange isn't fired consistently
+                       with autofill.
+         Note: setting state here isn't timed right - need to wait for rend
+               at any rate, setting constants for email & password and forcing inputXX values
+        */
+        this.setState({ email: this.inputEmail.value, password: this.inputPassword.value }, function(){
+
+            this.isValidCredentials()
+            .then(
+                (isValid) => {
+                    if (isValid){
+                        this.setState({ errors: {}, isLoading: true });
+                        authCredentials({ email: this.state.email, password: this.state.password })
+                        .then(
+                            res => {
+                                this.props.authSession(true, {});
+                                authLogin(res.data);
+                                this.props.addFlashMessage({
+                                    type: 'success',
+                                    text: 'You have successfully logged in! Welcome!'
+                                });
+                                this.setState({
+                                    redirect_home: true
+                                });
+                            },
+                            err => {
+                                if (err.response.status === 400){
+                                    // This shouldn't happen
+                                    this.setState({ isLoading: false, errors: { form: 'Invalid Input'} });
+                                }
+                                if (err.response.status === 401){
+                                    this.setState({ isLoading: false, errors: { form: 'Invalid Credentials'} });
+                                }
                             }
-                            if (err.response.status === 401){
-                                this.setState({ isLoading: false, errors: { form: 'Invalid Credentials'} });
-                            }
-                        }
-                    );
+                        );
+                    }
                 }
-            }
-        );
+            );
+        });
     }
     onForgotPassword(e){
         e.preventDefault();
-        this.isValidEmail()
-        .then(
-            isValid => {
-                if (isValid){
-                    forgotPassword(this.state.email)
-                    .then(
-                        res => {
-                            this.setState({
-                                errors: { email: '' },
-                                success: { form: 'Password reset link has been sent!' }
-                            });
-                        },
-                        err => {
-                            if (err.response.status === 400){
+
+        this.setState({ email: this.inputEmail.value, password: this.inputPassword.value }, function(){
+            this.isValidEmail()
+            .then(
+                isValid => {
+                    if (isValid){
+                        forgotPassword(this.state.email)
+                        .then(
+                            res => {
                                 this.setState({
-                                    errors: { email: 'Email is not valid' },
-                                    success: { form: '' }
+                                    errors: { email: '' },
+                                    success: { form: 'Password reset link has been sent!' }
                                 });
+                            },
+                            err => {
+                                if (err.response.status === 400){
+                                    this.setState({
+                                        errors: { email: 'Email is not valid' },
+                                        success: { form: '' }
+                                    });
+                                }
+                                if (err.response.status === 401){
+                                    this.setState({
+                                        errors: { email: 'Email is not registered' },
+                                        success: { form: '' }
+                                    });
+                                }
                             }
-                            if (err.response.status === 401){
-                                this.setState({
-                                    errors: { email: 'Email is not registered' },
-                                    success: { form: '' }
-                                });
-                            }
-                        }
-                    );
+                        );
+                    }
                 }
-            }
-        );
+            );
+        });
     }
     onLoadToken(){
         const search = this.props.location.search;
@@ -143,13 +155,17 @@ class LoginForm extends React.Component {
     componentWillMount(){
         this.onLoadToken();
     }
+
     render(){
+
         const { errors, success, redirect_home } = this.state;
+
         if (redirect_home) {
             return (
                 <Redirect to='/' />
             )
         }
+
         return (
             <form>
                 <h1>Login!</h1>
@@ -163,7 +179,7 @@ class LoginForm extends React.Component {
                     value={this.state.email}
                     type="email"
                     label="Email"
-                    onChange={this.onChange}
+                    onInput={this.onInput}
                     error={errors.email}
                 />
 
@@ -173,7 +189,7 @@ class LoginForm extends React.Component {
                     value={this.state.password}
                     type="password"
                     label="Password"
-                    onChange={this.onChange}
+                    onInput={this.onInput}
                     error={errors.password}
                 />
 

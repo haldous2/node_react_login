@@ -67,7 +67,7 @@ class MyProfileForm extends React.Component {
             password: this.state.myemail_password
         });
         return new Promise((valid, invalid) => {
-            this.setState({ errors });
+            this.setState({ errors, success: {} });
             return valid(isValid);
         });
     }
@@ -157,7 +157,7 @@ class MyProfileForm extends React.Component {
             password: this.state.mypassword_password
         });
         return new Promise((valid, invalid) => {
-            this.setState({ errors });
+            this.setState({ errors, success: {} });
             return valid(isValid);
         });
     }
@@ -232,7 +232,7 @@ class MyProfileForm extends React.Component {
             last_name: this.state.myprofile_last_name
         });
         return new Promise((valid, invalid) => {
-            this.setState({ errors });
+            this.setState({ errors, success: {} });
             return valid(isValid);
         });
     }
@@ -301,6 +301,9 @@ class MyProfileForm extends React.Component {
             }
         );
     }
+    // componentDidUpdate(){
+    //     console.log(this.state);
+    // }
 
     render(){
         const { errors, success } = this.state;
