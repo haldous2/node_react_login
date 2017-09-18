@@ -48,16 +48,11 @@ class MyProfileForm extends React.Component {
             isLoading: false
         }
         this.onInput = this.onInput.bind(this);
-        this.onChange = this.onChange.bind(this);
         this.onSubmitUpdateEmail = this.onSubmitUpdateEmail.bind(this);
         this.onSubmitUpdatePassword = this.onSubmitUpdatePassword.bind(this);
         this.onSubmitUpdateProfile = this.onSubmitUpdateProfile.bind(this);
     }
     onInput(e){
-        const { name, value } = e.target;
-        this.setState({ [name]: value });
-    }
-    onChange(e){
         const { name, value } = e.target;
         this.setState({ [name]: value });
     }
@@ -420,7 +415,7 @@ class MyProfileForm extends React.Component {
                         value={this.state.myprofile_first_name}
                         type="text"
                         label="First Name"
-                        onChange={this.onChange}
+                        onInput={this.onInput}
                         error={errors.myprofile_first_name}
                     />
 
@@ -430,7 +425,7 @@ class MyProfileForm extends React.Component {
                         value={this.state.myprofile_last_name}
                         type="text"
                         label="Last Name"
-                        onChange={this.onChange}
+                        onInput={this.onInput}
                         error={errors.myprofile_last_name}
                     />
 

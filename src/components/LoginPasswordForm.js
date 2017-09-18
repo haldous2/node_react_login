@@ -13,7 +13,6 @@ class LoginPasswordForm extends React.Component {
 
     constructor(props){
         super(props);
-        this.token = '';
         this.state = {
             password: '',
             errors: {
@@ -31,6 +30,7 @@ class LoginPasswordForm extends React.Component {
          This formerly lived @ componentWillMount - FB docs recommend will mount stuff
          live in constructor.
         */
+        this.token = '';
         this.onLoadToken();
 
         this.onInput = this.onInput.bind(this);
