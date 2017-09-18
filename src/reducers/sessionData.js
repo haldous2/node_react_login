@@ -1,6 +1,10 @@
 
 import { SET_SESSION_DATA } from '../actions/types';
 
+/*
+ Initialize isAuthenticated as null so that receiveProps of various components can have a chance
+ to wait for a true or false answer
+*/
 const initialState = {
     isAuthenticated: null,
     data: {}

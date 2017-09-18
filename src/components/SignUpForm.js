@@ -27,14 +27,9 @@ class SignUpForm extends React.Component {
             isLoading: false
         }
         this.onInput = this.onInput.bind(this);
-        this.onChange = this.onChange.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
     }
     onInput(e){
-        const { name, value } = e.target;
-        this.setState({ [name]: value });
-    }
-    onChange(e){
         const { name, value } = e.target;
         this.setState({ [name]: value });
     }

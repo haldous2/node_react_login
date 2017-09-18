@@ -17,7 +17,7 @@ class NavigationBar extends React.Component {
     }
     logout(e){
         e.preventDefault();
-        this.props.authSession(null, {});
+        this.props.authSession(false, {});
         authLogout();
     }
     buildLinkNav(Props, activeKey){

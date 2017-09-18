@@ -54,8 +54,8 @@ class LoginForm extends React.Component {
 
         /*
          Appears to be a bug with autofill + chrome + ios. (maybe more? haven't tested...)
-         work-around - setState from <input> values via onSubmit
-                       onChange isn't fired consistently when autofilled.
+           onChange isn't fired consistently when autofilled.
+           work-around - setState from <input> 'refs' values via onSubmit
         */
 
         this.setState({
@@ -77,7 +77,7 @@ class LoginForm extends React.Component {
                                     text: 'You have successfully logged in! Welcome!'
                                 });
                                 this.props.authSession(true, {});
-                                /* Redirecting via requireNoAuth or componentWillReceiveProps */
+                                /* Redirecting via utilities/requireNoAuth */
                             },
                             err => {
                                 if (err.response.status === 400){
@@ -144,25 +144,33 @@ class LoginForm extends React.Component {
                         text: 'You have successfully logged in! Welcome!'
                     });
                     this.props.authSession(true, {});
-                    /* Redirecting via requireNoAuth or componentWillReceiveProps */
+                    /* Redirecting via utilities/requireNoAuth */
                 }
             }
         )
     }
-    componentWillReceiveProps(nextProps){
-        /*
-         LoginForm lives between authorized and not authorized
-          (To setup as higher-order component or not.. that is the question [right now])
-          Note: set state.isAuthenticated to keep login page from displaying for a millisecond
-                while we wait for props to be received from redux - namely(redux.store.session.isAuthenticated)
-          Redirect if redux.store.session.isAuthenticated is true!
-        */
-        // if (nextProps.isAuthenticated === false){
-        //    this.setState({ isAuthenticated: false });
-        // }else{
-        //     this.props.history.push('/');
-        // }
-    }
+    // componentDidMount(){
+    //     // Note: when redirected from requireauth, props not updated (which is why we are checking here)
+    //     if (this.props.isAuthenticated === false){
+    //        this.setState({ isAuthenticated: false });
+    //     }
+    // }
+    // componentWillReceiveProps(nextProps){
+    //     /*
+    //      LoginForm lives between authorized and not authorized
+    //       ( Setup as higher-order component or not.. not sure yet )
+    //       Note: ReceiveProps fired off any time redux updated. e.g., addFlashMessage & authSession
+    //       Set state.isAuthenticated false to keep login page from displaying for a millisecond
+    //         while we wait for props to be received from redux.store.session.isAuthenticated
+    //       Redirect if redux.store.session.isAuthenticated is true!
+    //     */
+    //     if (nextProps.isAuthenticated === false){
+    //        this.setState({ isAuthenticated: false });
+    //     }
+    //     if (nextProps.isAuthenticated === true){
+    //         this.props.history.push('/');
+    //     }
+    // }
 
     render(){
         const { errors, success } = this.state;
@@ -217,9 +225,9 @@ LoginForm.propTypes = {
     authSession: PropTypes.func.isRequired,
     addFlashMessage: PropTypes.func.isRequired
 }
-function mapStateToProps(state){
-    return {
-        isAuthenticated: state.sessionData.isAuthenticated
-    }
-}
-export default connect(mapStateToProps, { authSession, addFlashMessage } )(LoginForm);
+// function mapStateToProps(state){
+//     return {
+//         isAuthenticated: state.sessionData.isAuthenticated
+//     }
+// }
+export default connect(null, { authSession, addFlashMessage } )(LoginForm);

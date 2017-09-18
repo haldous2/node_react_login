@@ -15,29 +15,35 @@ export default function(Component){
         constructor(props) {
             super(props);
             this.state = {};
+            this.isAuthenticated = null;
+        }
+        onAuthCheck(Props){
+            if (Props.isAuthenticated === true){
+                // Formerly logged in - on logout will need to keep from re-posting flashmessage (below)
+                this.isAuthenticated = true;
+            }
+            if (Props.isAuthenticated === false){
+                if (this.isAuthenticated === null){
+                    Props.addFlashMessage({
+                        type: 'error',
+                        text: 'You need to log in'
+                    });
+                    Props.history.push('/login');
+                }else{
+                    Props.history.push('/');
+                }
+            }
         }
 
         // Lifecycle hook - called right before render
         componentDidMount(){
-            // console.log('requireAuth.did.mount isAuthenticated:', this.props.isAuthenticated);
-            if (this.props.isAuthenticated === false){
-                this.props.addFlashMessage({
-                    type: 'error',
-                    text: 'You need to log in'
-                });
-                this.props.history.push('/login');
-            }
+            console.log('requireAuth.did.mount isAuthenticated:', this.props.isAuthenticated);
+            this.onAuthCheck(this.props);
         }
         // Lifecycle hooks - listening for props changes
         componentWillReceiveProps(nextProps){
-            // console.log('requireAuth.will.receive.props isAuthenticated:', nextProps.isAuthenticated);
-            if (nextProps.isAuthenticated === false){
-                nextProps.addFlashMessage({
-                    type: 'error',
-                    text: 'You need to log in'
-                });
-                this.props.history.push('/login');
-            }
+            console.log('requireAuth.will.receive.props isAuthenticated:', nextProps.isAuthenticated);
+            this.onAuthCheck(nextProps);
         }
         render(){
             if (this.props.isAuthenticated === true){

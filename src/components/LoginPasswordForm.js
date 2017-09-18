@@ -34,18 +34,12 @@ class LoginPasswordForm extends React.Component {
         this.onLoadToken();
 
         this.onInput = this.onInput.bind(this);
-        this.onChange = this.onChange.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
     }
     onInput(e){
         const { name, value } = e.target;
         this.setState({ [name]: value });
     }
-    onChange(e){
-        const { name, value } = e.target;
-        this.setState({ [name]: value });
-    }
-
     isValidPassword(){
         const { errors, isValid } = validatePassword(this.state);
         return new Promise((valid, invalid) => {
@@ -98,11 +92,8 @@ class LoginPasswordForm extends React.Component {
             this.props.history.push('/login');
         }
     }
-
     render(){
-
         const { errors, success } = this.state;
-
         return (
             <form>
 
