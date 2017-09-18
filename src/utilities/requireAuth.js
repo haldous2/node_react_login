@@ -1,53 +1,55 @@
 
+/*
+ requireAuth
+ For pages that should only be accessed when user is logged in
+*/
+
 import React from 'react';
-import { Redirect } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { addFlashMessage } from '../actions/flashMessages';
 
 export default function(Component){
-    class Authenticate extends React.Component {
+    class AuthCheck extends React.Component {
+
         constructor(props) {
             super(props);
-            this.state = {
-                redirect: false
-            };
+            this.state = {};
         }
+
         // Lifecycle hook - called right before render
         componentDidMount(){
+            // console.log('requireAuth.did.mount isAuthenticated:', this.props.isAuthenticated);
             if (this.props.isAuthenticated === false){
                 this.props.addFlashMessage({
                     type: 'error',
                     text: 'You need to log in'
                 });
-                this.setState({ redirect: true });
+                this.props.history.push('/login');
             }
         }
         // Lifecycle hooks - listening for props changes
         componentWillReceiveProps(nextProps){
-            if (nextProps.isAuthenticated === null){
-                this.setState({ redirect: true });
-            }
+            // console.log('requireAuth.will.receive.props isAuthenticated:', nextProps.isAuthenticated);
             if (nextProps.isAuthenticated === false){
                 nextProps.addFlashMessage({
                     type: 'error',
                     text: 'You need to log in'
                 });
-                this.setState({ redirect: true });
+                this.props.history.push('/login');
             }
         }
         render(){
-            if (this.state.redirect) {
-                return (
-                    <Redirect to='/login' />
+            if (this.props.isAuthenticated === true){
+                return(
+                    <Component {...this.props} />
                 );
+            }else{
+                return(null);
             }
-            return(
-                <Component {...this.props} />
-            );
         }
     }
-    Authenticate.propTypes = {
+    AuthCheck.propTypes = {
         isAuthenticated: PropTypes.bool,
         addFlashMessage: PropTypes.func.isRequired
     }
@@ -56,5 +58,5 @@ export default function(Component){
             isAuthenticated: state.sessionData.isAuthenticated
         }
     }
-    return connect(mapStateToProps, { addFlashMessage })(Authenticate);
+    return connect(mapStateToProps, { addFlashMessage })(AuthCheck);
 }

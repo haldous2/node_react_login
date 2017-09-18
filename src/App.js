@@ -5,6 +5,7 @@ import { createStore, applyMiddleware, compose } from 'redux';
 import thunk from 'redux-thunk';
 import rootReducer from './rootReducer';
 import requireAuth from './utilities/requireAuth';
+import requireNoAuth from './utilities/requireNoAuth';
 
 import cookie from 'react-cookies';
 import { authLogout, setSessionData, initAuthToken } from './actions/authActions';
@@ -55,16 +56,16 @@ class App extends React.Component {
             <Provider store={store}>
                 <BrowserRouter>
                     <Grid>
-                        <NavigationBar />
+                        <Route component={NavigationBar} />
                         {/* <Grid> */}
                             <Row className="show-grid">
-                                <FlashMessagesList />
+                                <Route component={FlashMessagesList} />
                                 <Switch>
                                     <Route exact path="/" component={Home} />
-                                    <Route exact path="/login" component={Login} />
+                                    <Route exact path="/login" component={requireNoAuth(Login)} />
                                     <Route exact path="/login/password" component={LoginPassword} />
                                     <Route exact path="/mysite" component={requireAuth(MySite)} />
-                                    <Route exact path="/signup" component={SignUp} />
+                                    <Route exact path="/signup" component={requireNoAuth(SignUp)} />
                                     <Route exact path="/myprofile" component={requireAuth(MyProfile)} />
                                     <Route path="*" component={HTTP404} />
                                 </Switch>

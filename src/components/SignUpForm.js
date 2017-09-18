@@ -1,8 +1,5 @@
 
 import React from 'react';
-import {
-  Redirect
-} from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
@@ -13,6 +10,7 @@ import { userSignupRequest } from '../actions/signupActions';
 import { addFlashMessage } from '../actions/flashMessages';
 
 class SignUpForm extends React.Component {
+
     constructor(props){
         super(props);
         this.state = {
@@ -26,16 +24,19 @@ class SignUpForm extends React.Component {
                 first_name: '',
                 last_name: ''
             },
-            redirect: false,
             isLoading: false
         }
-        /* either bind onChange here or for onClick in input element -- in constructor preferred */
+        this.onInput = this.onInput.bind(this);
         this.onChange = this.onChange.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
     }
+    onInput(e){
+        const { name, value } = e.target;
+        this.setState({ [name]: value });
+    }
     onChange(e){
-        // this.setState({ username: e.target.value });
-        this.setState({ [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        this.setState({ [name]: value });
     }
     isValidCredentials(){
         const { errors, isValid } = validateCredentials(this.state);
@@ -46,41 +47,46 @@ class SignUpForm extends React.Component {
     }
     onSubmit(e){
         e.preventDefault();
-        this.isValidCredentials()
-        .then(
-            isValid => {
-                if (isValid){
-                    this.setState({ errors: {}, isLoading: true });
-                    userSignupRequest(this.state)
-                    .then(
-                        res => {
-                            if (res.status === 200){
-                                this.props.addFlashMessage({
-                                    type: 'success',
-                                    text: 'You have successfully signed up! Welcome!'
-                                });
-                                this.setState({ isLoading: false, redirect: true });
+
+        this.setState({
+            email: this.inputEmail.value,
+            password: this.inputPassword.value,
+            first_name: this.inputFirstName.value,
+            last_name: this.inputLastName.value
+        }, function(){
+
+            this.isValidCredentials()
+            .then(
+                isValid => {
+                    if (isValid){
+                        this.setState({ errors: {}, isLoading: true });
+                        userSignupRequest(this.state)
+                        .then(
+                            res => {
+                                if (res.status === 200){
+                                    this.props.addFlashMessage({
+                                        type: 'success',
+                                        text: 'You have successfully signed up! Welcome!'
+                                    });
+                                    this.setState({ isLoading: false });
+                                    this.props.history.push('/');
+                                }
+                                if (res.status === 202){
+                                    this.setState({ isLoading: false, errors: { email: 'You have already signed up!'} });
+                                }
+                            },
+                            err => {
+                                this.setState({ isLoading: false });
+                                console.log('something bad happened:', err);
                             }
-                            if (res.status === 202){
-                                this.setState({ isLoading: false, errors: { email: 'You have already signed up!'} });
-                            }
-                        },
-                        err => {
-                            this.setState({ isLoading: false });
-                            console.log('something bad happened:', err);
-                        }
-                    );
+                        );
+                    }
                 }
-            }
-        );
+            );
+        });
     }
     render(){
-        const { errors, redirect } = this.state;
-        if (redirect) {
-            return (
-                <Redirect to='/' />
-            )
-        }
+        const { errors } = this.state;
         return (
 
             <form>
@@ -88,38 +94,42 @@ class SignUpForm extends React.Component {
                 <h1>Join our community!</h1>
 
                 <InputField
+                    reference={ input => { this.inputEmail = input }}
                     field="email"
                     value={this.state.email}
-                    type="text"
+                    type="email"
                     label="Email"
-                    onChange={this.onChange}
+                    onInput={this.onInput}
                     error={errors.email}
                 />
 
                 <InputField
+                    reference={ input => { this.inputPassword = input }}
                     field="password"
                     value={this.state.password}
                     type="password"
                     label="Password"
-                    onChange={this.onChange}
+                    onInput={this.onInput}
                     error={errors.password}
                 />
 
                 <InputField
+                    reference={ input => { this.inputFirstName = input }}
                     field="first_name"
                     value={this.state.first_name}
                     type="text"
                     label="First Name"
-                    onChange={this.onChange}
+                    onInput={this.onInput}
                     error={errors.first_name}
                 />
 
                 <InputField
+                    reference={ input => { this.inputLastName = input }}
                     field="last_name"
                     value={this.state.last_name}
                     type="text"
                     label="Last Name"
-                    onChange={this.onChange}
+                    onInput={this.onInput}
                     error={errors.last_name}
                 />
 

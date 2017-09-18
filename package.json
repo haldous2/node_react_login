@@ -15,7 +15,6 @@
     "mysql": "^2.13.0",
     "nodemailer": "^4.0.1",
     "react": "^15.6.1",
-    "react-autofill": "^1.1.4",
     "react-bootstrap": "^0.31.2",
     "react-cookies": "^0.1.0",
     "react-dom": "^15.6.1",

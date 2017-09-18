@@ -10,7 +10,11 @@ class NavigationBar extends React.Component {
 
     constructor(props) {
         super(props);
-        this.state = {};
+        this.state = {
+            activeKey: '/',
+            pathname: '',
+            link_nav: null
+        };
         this.logout = this.logout.bind(this);
     }
     logout(e){
@@ -18,32 +22,57 @@ class NavigationBar extends React.Component {
         this.props.authSession(null, {});
         authLogout();
     }
-    componentWillReceiveProps(nextProps){
+    buildLinkNav(Props, State){
         let link_nav = '';
-        const { isAuthenticated } = nextProps.sessionData;
+        const { isAuthenticated } = Props.sessionData;
         if (isAuthenticated === true){
             link_nav = (
                 // <ul className="nav navbar-nav">
                 //     <li className="nav-item"><Link to="/mysite">My Site (Test Login)</Link></li>
                 //     <li className="nav-item"><Link to="#" onClick={this.logout}>Logout</Link></li>
                 // </ul>
-                <Nav bsStyle="pills" pullRight activeKey={this.state.activeKey} onSelect={this.handleSelect}>
-                    <NavItem eventKey={1} href="/mysite">My Site</NavItem>
-                    <NavItem eventKey={1} href="/myprofile">My Profile</NavItem>
-                    <NavItem eventKey={3} href="#" onClick={this.logout}>Logout</NavItem>
+                <Nav bsStyle="pills" pullRight activeKey={State.activeKey} onSelect={this.handleSelect}>
+                    <NavItem eventKey={'/mysite'} href="/mysite">My Site</NavItem>
+                    <NavItem eventKey={'/myprofile'} href="/myprofile">My Profile</NavItem>
+                    <NavItem eventKey={'/logout'} href="#" onClick={this.logout}>Logout</NavItem>
                 </Nav>
             );
         }else{
             link_nav = (
-                <Nav bsStyle="pills" pullRight activeKey={this.state.activeKey} onSelect={this.handleSelect}>
-                    <NavItem eventKey={1} href="/mysite">My Site (Test Login)</NavItem>
-                    <NavItem eventKey={2} href="/signup">Sign Up</NavItem>
-                    <NavItem eventKey={3} href="/login">Log In</NavItem>
+                <Nav bsStyle="pills" pullRight activeKey={State.activeKey} onSelect={this.handleSelect}>
+                    <NavItem eventKey={'/mysite'} href="/mysite">My Site (Test Login)</NavItem>
+                    <NavItem eventKey={'/signup'} href="/signup">Sign Up</NavItem>
+                    <NavItem eventKey={'/login'} href="/login">Log In</NavItem>
                 </Nav>
             );
         }
         this.setState({ link_nav: link_nav });
     }
+    componentWillReceiveProps(nextProps){
+        const { pathname } = nextProps.location;
+        this.setState({ activeKey: pathname }, function(){
+            this.buildLinkNav(nextProps, this.state);
+        });
+    }
+    // componentWillUpdate(nextProps, nextState){
+    //     // console.log('navigation.will.update');
+    //     /*
+    //      Will update on props or state change.
+    //      when isAuthenticated is initiated
+    //      when activeKey or link_nav state is set
+    //     */
+    //     const { pathname } = nextProps.location;
+    //     // console.log('pathname:', pathname, ' nextState.pathname:', nextState.pathname);
+    //     if (pathname !== nextState.pathname){
+    //         this.setState({ activeKey: pathname, pathname: pathname, link_nav: null });
+    //     }else{
+    //         if (!nextState.link_nav){
+    //             console.log(nextState.activeKey);
+    //             this.buildLinkNav(nextProps, nextState);
+    //         }
+    //     }
+    // }
+
     render(){
         return (
             <Navbar fluid>

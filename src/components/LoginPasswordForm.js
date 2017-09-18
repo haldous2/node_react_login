@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Redirect } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
@@ -11,6 +10,7 @@ import { authPassword } from '../actions/authActions';
 import { addFlashMessage } from '../actions/flashMessages';
 
 class LoginPasswordForm extends React.Component {
+
     constructor(props){
         super(props);
         this.token = '';
@@ -23,17 +23,29 @@ class LoginPasswordForm extends React.Component {
             success: {
                 form: ''
             },
-            redirect_login: false,
             isLoading: false
         }
-        /* either bind onChange here or for onClick in input element -- in constructor preferred */
+
+        /*
+         Token checker
+         This formerly lived @ componentWillMount - FB docs recommend will mount stuff
+         live in constructor.
+        */
+        this.onLoadToken();
+
+        this.onInput = this.onInput.bind(this);
         this.onChange = this.onChange.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
     }
-    onChange(e){
-        // this.setState({ username: e.target.value });
-        this.setState({ [e.target.name]: e.target.value });
+    onInput(e){
+        const { name, value } = e.target;
+        this.setState({ [name]: value });
     }
+    onChange(e){
+        const { name, value } = e.target;
+        this.setState({ [name]: value });
+    }
+
     isValidPassword(){
         const { errors, isValid } = validatePassword(this.state);
         return new Promise((valid, invalid) => {
@@ -43,30 +55,37 @@ class LoginPasswordForm extends React.Component {
     }
     onSubmit(e){
         e.preventDefault();
-        this.isValidPassword()
-        .then(
-            (isValid) => {
-                if (isValid){
-                    this.setState({ errors: {}, isLoading: true });
-                    authPassword(this.token, this.state.password)
-                    .then(
-                        res => {
-                            this.props.addFlashMessage({
-                                type: 'success',
-                                text: 'Your password has been updated!'
-                            });
-                            this.setState({ isLoading: false, redirect_login: true });
-                        },
-                        err => {
-                            this.setState({ redirect_login: true });
-                        }
-                    );
+
+        this.setState({
+            password: this.inputPassword.value
+        }, function(){
+            this.isValidPassword()
+            .then(
+                (isValid) => {
+                    if (isValid){
+                        this.setState({ errors: {}, isLoading: true });
+                        authPassword(this.token, this.state.password)
+                        .then(
+                            res => {
+                                this.props.addFlashMessage({
+                                    type: 'success',
+                                    text: 'Your password has been updated!'
+                                });
+                                this.setState({ isLoading: false });
+                                this.props.history.push('/login');
+                            },
+                            err => {
+                                this.props.history.push('/login');
+                            }
+                        );
+                    }
                 }
-            }
-        );
+            );
+        });
     }
     onLoadToken(){
         let token = '';
+        console.log('LoginPasswordForm.location:', this.props.location);
         if (this.props.location.pathname === '/login/password'){
             const search = this.props.location.search;
             const params = new URLSearchParams(search);
@@ -76,21 +95,14 @@ class LoginPasswordForm extends React.Component {
             this.token = token;
         }else{
             // get out of here! - missing token!
-            this.setState({ redirect_login: true });
+            this.props.history.push('/login');
         }
     }
-    componentWillMount(){
-        this.onLoadToken();
-    }
+
     render(){
 
-        const { errors, success, redirect_login } = this.state;
+        const { errors, success } = this.state;
 
-        if (redirect_login) {
-            return (
-                <Redirect to='/login' />
-            )
-        }
         return (
             <form>
 
@@ -100,11 +112,12 @@ class LoginPasswordForm extends React.Component {
                 { errors.form && <div className="alert alert-danger">{errors.form}</div>}
 
                 <InputField
+                    reference={ input => { this.inputPassword = input }}
                     field="password"
                     value={this.state.password}
                     type="password"
                     label="Password"
-                    onChange={this.onChange}
+                    onInput={this.onInput}
                     error={errors.password}
                 />
 

@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Redirect } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
@@ -25,7 +24,7 @@ class LoginForm extends React.Component {
             success: {
                 form: ''
             },
-            redirect_home: false,
+            isAuthenticated: null,
             isLoading: false
         }
         this.onInput = this.onInput.bind(this);
@@ -55,12 +54,14 @@ class LoginForm extends React.Component {
 
         /*
          Appears to be a bug with autofill + chrome + ios. (maybe more? haven't tested...)
-         work-around - set state onSubmit since onChange isn't fired consistently
-                       with autofill.
-         Note: setting state here isn't timed right - need to wait for rend
-               at any rate, setting constants for email & password and forcing inputXX values
+         work-around - setState from <input> values via onSubmit
+                       onChange isn't fired consistently when autofilled.
         */
-        this.setState({ email: this.inputEmail.value, password: this.inputPassword.value }, function(){
+
+        this.setState({
+            email: this.inputEmail.value,
+            password: this.inputPassword.value
+        }, function(){
 
             this.isValidCredentials()
             .then(
@@ -70,15 +71,13 @@ class LoginForm extends React.Component {
                         authCredentials({ email: this.state.email, password: this.state.password })
                         .then(
                             res => {
-                                this.props.authSession(true, {});
                                 authLogin(res.data);
                                 this.props.addFlashMessage({
                                     type: 'success',
                                     text: 'You have successfully logged in! Welcome!'
                                 });
-                                this.setState({
-                                    redirect_home: true
-                                });
+                                this.props.authSession(true, {});
+                                /* Redirecting via requireNoAuth or componentWillReceiveProps */
                             },
                             err => {
                                 if (err.response.status === 400){
@@ -140,77 +139,87 @@ class LoginForm extends React.Component {
             res => {
                 if (res === true){
                     authLogin(token);
-                    this.props.authSession(true, {});
                     this.props.addFlashMessage({
                         type: 'success',
                         text: 'You have successfully logged in! Welcome!'
                     });
-                    this.setState({
-                        redirect_home: true
-                    });
+                    this.props.authSession(true, {});
+                    /* Redirecting via requireNoAuth or componentWillReceiveProps */
                 }
             }
         )
     }
-    componentWillMount(){
-        this.onLoadToken();
+    componentWillReceiveProps(nextProps){
+        /*
+         LoginForm lives between authorized and not authorized
+          (To setup as higher-order component or not.. that is the question [right now])
+          Note: set state.isAuthenticated to keep login page from displaying for a millisecond
+                while we wait for props to be received from redux - namely(redux.store.session.isAuthenticated)
+          Redirect if redux.store.session.isAuthenticated is true!
+        */
+        // if (nextProps.isAuthenticated === false){
+        //    this.setState({ isAuthenticated: false });
+        // }else{
+        //     this.props.history.push('/');
+        // }
     }
 
     render(){
-
-        const { errors, success, redirect_home } = this.state;
-
-        if (redirect_home) {
+        const { errors, success } = this.state;
+        // if (this.state.isAuthenticated === false){
             return (
-                <Redirect to='/' />
-            )
-        }
+                <form>
+                    <h1>Login!</h1>
 
-        return (
-            <form>
-                <h1>Login!</h1>
+                    { success.form && <div className="alert alert-success">{success.form}</div>}
+                    { errors.form && <div className="alert alert-danger">{errors.form}</div>}
 
-                { success.form && <div className="alert alert-success">{success.form}</div>}
-                { errors.form && <div className="alert alert-danger">{errors.form}</div>}
+                    <InputField
+                        reference={ input => { this.inputEmail = input }}
+                        field="email"
+                        value={this.state.email}
+                        type="email"
+                        label="Email"
+                        onInput={this.onInput}
+                        error={errors.email}
+                    />
 
-                <InputField
-                    reference={ input => { this.inputEmail = input }}
-                    field="email"
-                    value={this.state.email}
-                    type="email"
-                    label="Email"
-                    onInput={this.onInput}
-                    error={errors.email}
-                />
+                    <InputField
+                        reference={ input => { this.inputPassword = input }}
+                        field="password"
+                        value={this.state.password}
+                        type="password"
+                        label="Password"
+                        onInput={this.onInput}
+                        error={errors.password}
+                    />
 
-                <InputField
-                    reference={ input => { this.inputPassword = input }}
-                    field="password"
-                    value={this.state.password}
-                    type="password"
-                    label="Password"
-                    onInput={this.onInput}
-                    error={errors.password}
-                />
+                    <div className="form-group">
+                        <button disabled={this.state.isLoading} onClick={this.onSubmit} className="btn btn-primary btn-block btn-lg">
+                            Log In
+                        </button>
+                    </div>
 
-                <div className="form-group">
-                    <button disabled={this.state.isLoading} onClick={this.onSubmit} className="btn btn-primary btn-block btn-lg">
-                        Log In
-                    </button>
-                </div>
+                    <div className="form-group">
+                        <button disabled={this.state.isLoading} onClick={this.onForgotPassword} className="btn btn-info btn-block btn-lg">
+                            Forgot Password
+                        </button>
+                    </div>
 
-                <div className="form-group">
-                    <button disabled={this.state.isLoading} onClick={this.onForgotPassword} className="btn btn-info btn-block btn-lg">
-                        Forgot Password
-                    </button>
-                </div>
-
-            </form>
-        );
+                </form>
+            );
+        // }else{
+        //     return(null);
+        // }
     }
 }
 LoginForm.propTypes = {
     authSession: PropTypes.func.isRequired,
     addFlashMessage: PropTypes.func.isRequired
 }
-export default connect(null, { authSession, addFlashMessage } )(LoginForm);
+function mapStateToProps(state){
+    return {
+        isAuthenticated: state.sessionData.isAuthenticated
+    }
+}
+export default connect(mapStateToProps, { authSession, addFlashMessage } )(LoginForm);

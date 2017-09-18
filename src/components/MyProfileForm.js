@@ -47,13 +47,19 @@ class MyProfileForm extends React.Component {
             },
             isLoading: false
         }
+        this.onInput = this.onInput.bind(this);
         this.onChange = this.onChange.bind(this);
         this.onSubmitUpdateEmail = this.onSubmitUpdateEmail.bind(this);
         this.onSubmitUpdatePassword = this.onSubmitUpdatePassword.bind(this);
         this.onSubmitUpdateProfile = this.onSubmitUpdateProfile.bind(this);
     }
+    onInput(e){
+        const { name, value } = e.target;
+        this.setState({ [name]: value });
+    }
     onChange(e){
-        this.setState({ [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        this.setState({ [name]: value });
     }
 
     /*
@@ -73,78 +79,84 @@ class MyProfileForm extends React.Component {
     }
     onSubmitUpdateEmail(e){
         e.preventDefault();
-        this.isValidUpdateEmail()
-        .then(
-            isValid => {
-                if (isValid){
-                    this.setState({ errors: {}, success: {}, isLoading: true });
-                    userUpdateEmail({
-                        newemail: this.state.myemail_newemail,
-                        password: this.state.myemail_password
-                    })
-                    .then(
-                        res => {
-                            this.setState({
-                                isLoading: false,
-                                errors: {
-                                    myemail_form: '',
-                                    myemail_newemail: '',
-                                    myemail_password: ''
-                                },
-                                success: {
-                                    myemail_form: 'Email address updated!'
-                                },
-                                email: this.state.myemail_newemail,
-                                myemail_newemail: '',
-                                myemail_password: ''
-                            });
-                        },
-                        err => {
-                            if (err.response.status === 400){
-                                // This shouldn't happen - just in case!
-                                this.setState({
-                                    isLoading: false,
-                                    errors: {
-                                        myemail_form: '',
-                                        myemail_newemail: 'Invalid email address',
-                                        myemail_password: ''
-                                    },
-                                    success: {
-                                        myemail_form: ''
-                                    }
-                                });
-                            }
-                            if (err.response.status === 401){
+
+        this.setState({
+            myemail_newemail: this.inputMyEmailNewEmail.value,
+            myemail_password: this.inputMyEmailPassword.value
+        }, function(){
+            this.isValidUpdateEmail()
+            .then(
+                isValid => {
+                    if (isValid){
+                        this.setState({ errors: {}, success: {}, isLoading: true });
+                        userUpdateEmail({
+                            newemail: this.state.myemail_newemail,
+                            password: this.state.myemail_password
+                        })
+                        .then(
+                            res => {
                                 this.setState({
                                     isLoading: false,
                                     errors: {
                                         myemail_form: '',
                                         myemail_newemail: '',
-                                        myemail_password: 'Invalid password'
-                                    },
-                                    success: {
-                                        myemail_form: ''
-                                    }
-                                });
-                            }
-                            if (err.response.status === 409){
-                                this.setState({
-                                    isLoading: false,
-                                    errors: {
-                                        myemail_form: '',
-                                        myemail_newemail: 'Email address already in use',
                                         myemail_password: ''
                                     },
                                     success: {
-                                        myemail_form: ''
-                                    }
+                                        myemail_form: 'Email address updated!'
+                                    },
+                                    email: this.state.myemail_newemail,
+                                    myemail_newemail: '',
+                                    myemail_password: ''
                                 });
+                            },
+                            err => {
+                                if (err.response.status === 400){
+                                    // This shouldn't happen - just in case!
+                                    this.setState({
+                                        isLoading: false,
+                                        errors: {
+                                            myemail_form: '',
+                                            myemail_newemail: 'Invalid email address',
+                                            myemail_password: ''
+                                        },
+                                        success: {
+                                            myemail_form: ''
+                                        }
+                                    });
+                                }
+                                if (err.response.status === 401){
+                                    this.setState({
+                                        isLoading: false,
+                                        errors: {
+                                            myemail_form: '',
+                                            myemail_newemail: '',
+                                            myemail_password: 'Invalid password'
+                                        },
+                                        success: {
+                                            myemail_form: ''
+                                        }
+                                    });
+                                }
+                                if (err.response.status === 409){
+                                    this.setState({
+                                        isLoading: false,
+                                        errors: {
+                                            myemail_form: '',
+                                            myemail_newemail: 'Email address already in use',
+                                            myemail_password: ''
+                                        },
+                                        success: {
+                                            myemail_form: ''
+                                        }
+                                    });
+                                }
                             }
-                        }
-                    );
+                        );
+                    }
                 }
-            }
-        );
+            );
+        });
     }
 
     /*
@@ -163,63 +175,69 @@ class MyProfileForm extends React.Component {
     }
     onSubmitUpdatePassword(e){
         e.preventDefault();
-        this.isValidUpdatePassword()
-        .then(
-            isValid => {
-                if (isValid){
-                    userUpdatePassword({
-                        newpassword: this.state.mypassword_newpassword,
-                        password: this.state.mypassword_password
-                    })
-                    .then(
-                        res => {
-                            this.setState({
-                                isLoading: false,
-                                errors: {
-                                    mypassword_form: '',
-                                    mypassword_password: '',
-                                    mypassword_newpassword: ''
-                                },
-                                success: {
-                                    mypassword_form: 'Password updated!'
-                                },
-                                mypassword_newpassword: '',
-                                mypassword_password: ''
-                            });
-                        },
-                        err => {
-                            if (err.response.status === 400){
-                                // This shouldn't happen - just in case!
+
+        this.setState({
+            mypassword_newpassword: this.inputMyPasswordNewPassword.value,
+            mypassword_password: this.inputMyPasswordPassword.value
+        }, function(){
+            this.isValidUpdatePassword()
+            .then(
+                isValid => {
+                    if (isValid){
+                        userUpdatePassword({
+                            newpassword: this.state.mypassword_newpassword,
+                            password: this.state.mypassword_password
+                        })
+                        .then(
+                            res => {
                                 this.setState({
                                     isLoading: false,
                                     errors: {
                                         mypassword_form: '',
                                         mypassword_password: '',
-                                        mypassword_newpassword: 'Invalid password'
-                                    },
-                                    success: {
-                                        myprofile_form: ''
-                                    }
-                                });
-                            }
-                            if (err.response.status === 401){
-                                this.setState({
-                                    isLoading: false,
-                                    errors: {
-                                        mypassword_form: '',
-                                        mypassword_password: 'Invalid password',
                                         mypassword_newpassword: ''
                                     },
                                     success: {
-                                        myprofile_form: ''
-                                    }
+                                        mypassword_form: 'Password updated!'
+                                    },
+                                    mypassword_newpassword: '',
+                                    mypassword_password: ''
                                 });
+                            },
+                            err => {
+                                if (err.response.status === 400){
+                                    // This shouldn't happen - just in case!
+                                    this.setState({
+                                        isLoading: false,
+                                        errors: {
+                                            mypassword_form: '',
+                                            mypassword_password: '',
+                                            mypassword_newpassword: 'Invalid password'
+                                        },
+                                        success: {
+                                            myprofile_form: ''
+                                        }
+                                    });
+                                }
+                                if (err.response.status === 401){
+                                    this.setState({
+                                        isLoading: false,
+                                        errors: {
+                                            mypassword_form: '',
+                                            mypassword_password: 'Invalid password',
+                                            mypassword_newpassword: ''
+                                        },
+                                        success: {
+                                            myprofile_form: ''
+                                        }
+                                    });
+                                }
                             }
-                        }
-                    );
+                        );
+                    }
                 }
-            }
-        );
+            );
+        });
     }
 
     /*
@@ -238,47 +256,53 @@ class MyProfileForm extends React.Component {
     }
     onSubmitUpdateProfile(e){
         e.preventDefault();
-        this.isValidUpdateProfile()
-        .then(
-            isValid => {
-                if (isValid){
-                    userUpdateProfile({
-                        first_name: this.state.myprofile_first_name,
-                        last_name: this.state.myprofile_last_name
-                    })
-                    .then(
-                        res => {
-                            this.setState({
-                                isLoading: false,
-                                errors: {
-                                    myprofile_first_name: '',
-                                    myprofile_last_name: '',
-                                    myprofile_form: ''
-                                },
-                                success: {
-                                    myprofile_form: 'Profile updated!'
-                                }
-                            });
-                        },
-                        err => {
-                            if (err.response.status === 401){
+
+        this.setState({
+            myprofile_first_name: this.inputMyProfileFirstName.value,
+            myprofile_last_name: this.inputMyProfileLastName.value
+        }, function(){
+            this.isValidUpdateProfile()
+            .then(
+                isValid => {
+                    if (isValid){
+                        userUpdateProfile({
+                            first_name: this.state.myprofile_first_name,
+                            last_name: this.state.myprofile_last_name
+                        })
+                        .then(
+                            res => {
                                 this.setState({
                                     isLoading: false,
                                     errors: {
                                         myprofile_first_name: '',
                                         myprofile_last_name: '',
-                                        mypassword_form: 'Something bad happened'
+                                        myprofile_form: ''
                                     },
                                     success: {
-                                        myprofile_form: ''
+                                        myprofile_form: 'Profile updated!'
                                     }
                                 });
+                            },
+                            err => {
+                                if (err.response.status === 401){
+                                    this.setState({
+                                        isLoading: false,
+                                        errors: {
+                                            myprofile_first_name: '',
+                                            myprofile_last_name: '',
+                                            mypassword_form: 'Something bad happened'
+                                        },
+                                        success: {
+                                            myprofile_form: ''
+                                        }
+                                    });
+                                }
                             }
-                        }
-                    );
+                        );
+                    }
                 }
-            }
-        );
+            );
+        });
     }
 
     /*
@@ -301,9 +325,6 @@ class MyProfileForm extends React.Component {
             }
         );
     }
-    // componentDidUpdate(){
-    //     console.log(this.state);
-    // }
 
     render(){
         const { errors, success } = this.state;
@@ -324,20 +345,22 @@ class MyProfileForm extends React.Component {
                     />
 
                     <InputField
+                        reference={ input => { this.inputMyEmailNewEmail = input }}
                         field="myemail_newemail"
                         value={this.state.myemail_newemail}
                         type="email"
                         label="Update Email"
-                        onChange={this.onChange}
+                        onInput={this.onInput}
                         error={errors.myemail_newemail}
                     />
 
                     <InputField
+                        reference={ input => { this.inputMyEmailPassword = input }}
                         field="myemail_password"
                         value={this.state.myemail_password}
                         type="password"
                         label="Current Password"
-                        onChange={this.onChange}
+                        onInput={this.onInput}
                         error={errors.myemail_password}
                     />
 
@@ -357,20 +380,22 @@ class MyProfileForm extends React.Component {
                     { errors.mypassword_form && <div className="alert alert-danger">{errors.mypassword_form}</div>}
 
                     <InputField
+                        reference={ input => { this.inputMyPasswordNewPassword = input }}
                         field="mypassword_newpassword"
                         value={this.state.mypassword_newpassword}
                         type="password"
                         label="Update Password"
-                        onChange={this.onChange}
+                        onInput={this.onInput}
                         error={errors.mypassword_newpassword}
                     />
 
                     <InputField
+                        reference={ input => { this.inputMyPasswordPassword = input }}
                         field="mypassword_password"
                         value={this.state.mypassword_password}
                         type="password"
                         label="Current Password"
-                        onChange={this.onChange}
+                        onInput={this.onInput}
                         error={errors.mypassword_password}
                     />
 
@@ -390,6 +415,7 @@ class MyProfileForm extends React.Component {
                     { errors.myprofile_form && <div className="alert alert-danger">{errors.myprofile_form}</div>}
 
                     <InputField
+                        reference={ input => { this.inputMyProfileFirstName = input }}
                         field="myprofile_first_name"
                         value={this.state.myprofile_first_name}
                         type="text"
@@ -399,6 +425,7 @@ class MyProfileForm extends React.Component {
                     />
 
                     <InputField
+                        reference={ input => { this.inputMyProfileLastName = input }}
                         field="myprofile_last_name"
                         value={this.state.myprofile_last_name}
                         type="text"
