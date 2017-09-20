@@ -11,6 +11,7 @@ import cookie from 'react-cookies';
 import { authLogout, setSessionData, initAuthToken } from './actions/authActions';
 
 import { Grid, Row } from 'react-bootstrap';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
 import {
   BrowserRouter,
@@ -55,9 +56,10 @@ class App extends React.Component {
         return (
             <Provider store={store}>
                 <BrowserRouter>
-                    <Grid>
+                    <MuiThemeProvider>
+                    <div>
                         <Route component={NavigationBar} />
-                        {/* <Grid> */}
+                        <Grid>
                             <Row className="show-grid">
                                 <Route component={FlashMessagesList} />
                                 <Switch>
@@ -70,8 +72,9 @@ class App extends React.Component {
                                     <Route path="*" component={HTTP404} />
                                 </Switch>
                             </Row>
-                        {/* </Grid> */}
-                    </Grid>
+                        </Grid>
+                    </div>
+                    </MuiThemeProvider>
                 </BrowserRouter>
             </Provider>
         );

@@ -6,6 +6,37 @@ import { authSession, authLogout } from '../actions/authActions'
 
 import { Nav, Navbar, NavItem, NavDropdown } from 'react-bootstrap';
 
+import AppBar from 'material-ui/AppBar';
+import IconButton from 'material-ui/IconButton';
+import IconMenu from 'material-ui/IconMenu';
+import MenuItem from 'material-ui/MenuItem';
+import FlatButton from 'material-ui/FlatButton';
+import Toggle from 'material-ui/Toggle';
+import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
+import NavigationClose from 'material-ui/svg-icons/navigation/close';
+
+const rightNav = (props) => (
+    <div className="right-nav">
+        <FlatButton label="Overview"  href="/overview" style={{color:'#fff'}} className="topMenu-item"/>
+        <FlatButton label="Team"  href="/team" style={{color:'#fff'}} className="topMenu-item"/>
+    </div>
+);
+const rightNavIcon = (props) => (
+    <div className="right-nav-icon">
+        <IconMenu
+          iconButtonElement={
+            <IconButton><MoreVertIcon /></IconButton>
+          }
+          targetOrigin={{horizontal: 'right', vertical: 'top'}}
+          anchorOrigin={{horizontal: 'right', vertical: 'top'}}
+        >
+          <MenuItem primaryText="Refresh" />
+          <MenuItem primaryText="Help" />
+          <MenuItem primaryText="Sign out" />
+        </IconMenu>
+    </div>
+);
+
 class NavigationBar extends React.Component {
 
     constructor(props) {
@@ -69,23 +100,46 @@ class NavigationBar extends React.Component {
         }
         this.setState({ link_nav: link_nav });
     }
+    onRenderBootstrap(){
+        <Navbar>
+            <Navbar.Header>
+                <Navbar.Brand>
+                    <a href="/">Node React Login</a>
+                </Navbar.Brand>
+                <Navbar.Toggle />
+            </Navbar.Header>
+            <Navbar.Collapse>
+                { this.state.link_nav }
+            </Navbar.Collapse>
+        </Navbar>
+    }
+    onRenderMaterial(){
+        <AppBar
+          title="Title"
+        />
+    }
     componentWillReceiveProps(nextProps){
         this.buildLinkNav(nextProps, nextProps.location.pathname);
     }
 
     render(){
         return (
-            <Navbar>
-                <Navbar.Header>
-                    <Navbar.Brand>
-                        <a href="/">Node React Login</a>
-                    </Navbar.Brand>
-                    <Navbar.Toggle />
-                </Navbar.Header>
-                <Navbar.Collapse>
-                    { this.state.link_nav }
-                </Navbar.Collapse>
-            </Navbar>
+            <AppBar
+              title="React Login Study"
+              iconElementRight={
+              <IconMenu
+                iconButtonElement={
+                  <IconButton><MoreVertIcon /></IconButton>
+                }
+                targetOrigin={{horizontal: 'right', vertical: 'top'}}
+                anchorOrigin={{horizontal: 'right', vertical: 'top'}}
+              >
+                <MenuItem primaryText="Refresh" />
+                <MenuItem primaryText="Help" />
+                <MenuItem primaryText="Sign out" />
+              </IconMenu>
+            }
+            />
         );
     }
 }

@@ -10,6 +10,7 @@ import { authSession, authLogin, initAuthToken, authCredentials, forgotPassword 
 import { addFlashMessage } from '../actions/flashMessages';
 
 import { Col, Row } from 'react-bootstrap';
+import RaisedButton from 'material-ui/RaisedButton';
 
 class LoginForm extends React.Component {
 
@@ -168,6 +169,8 @@ class LoginForm extends React.Component {
                 { success.form && <div className="alert alert-success">{success.form}</div>}
                 { errors.form && <div className="alert alert-danger">{errors.form}</div>}
 
+                <RaisedButton label="Default" />
+                
                 <InputField
                     reference={ input => { this.inputEmail = input }}
                     field="email"
